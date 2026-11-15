@@ -9,6 +9,7 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 | 包 | 做什么 | 分类 |
 |---|---|---|
 | [`@yggizz/dsh-theme-toggle`](packages/theme-toggle) | 标题栏里加一个深浅色切换按钮 | 主题与外观 |
+| [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
 
 ## 安装
 

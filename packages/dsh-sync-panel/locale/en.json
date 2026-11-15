@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sync & migrate",
+    "description": "Packs local plugins and DSH config into one zip from Settings and restores it on another machine, keeping both computers on the same plugin setup."
+  }
+}

@@ -1,0 +1,11 @@
+# dsh-sync-panel：设置页里的「同步与迁移」一页
+# 字段含义见 README；路径类字段（profileDir / syncDir / pluginsRoot）一律不写死，
+# 走代码默认值（基于 os.homedir()），这样在任何机器上装都能用。
+# 需要改的话，在 profile 的 cordis.patch.yml 里覆盖本行的 config 即可。
+- insert:
+    - id: dsh-sync-panel
+      name: '@yggizz/dsh-sync-panel'
+      config:
+        includePresets: false
+        installDeps: true
+        forcePluginsRoot: false

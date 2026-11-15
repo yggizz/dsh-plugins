@@ -1,0 +1,60 @@
+{
+  "name": "@yggizz/dsh-sync-panel",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Packs local plugins and the DSH profile into one zip from Settings, and restores it on another machine.",
+  "license": "MIT",
+  "icon": "./icon.svg",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "scripts/dsh-pack.ps1",
+    "scripts/dsh-restore.ps1",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yggizz/dsh-plugins.git",
+    "directory": "packages/dsh-sync-panel"
+  },
+  "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-sync-panel#readme",
+  "bugs": {
+    "url": "https://github.com/yggizz/dsh-plugins/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "cordis",
+    "sync",
+    "backup",
+    "settings"
+  ]
+}
