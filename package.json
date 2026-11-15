@@ -1,0 +1,22 @@
+{
+  "name": "dsh-plugins",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A collection of DeepSeek Harness (dsh) bundles, one installable package per directory under packages/.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yggizz/dsh-plugins.git"
+  },
+  "homepage": "https://github.com/yggizz/dsh-plugins#readme",
+  "bugs": {
+    "url": "https://github.com/yggizz/dsh-plugins/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "cordis"
+  ]
+}

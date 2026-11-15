@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Theme toggle",
+    "description": "Adds a button beside the DeepSeek logo in the sidebar. Click it to switch between light and dark. While the appearance is set to follow the system, the first click pins the opposite of the current look."
+  }
+}
