@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Sync & migrate",
-    "description": "Packs local plugins and DSH config into one zip from Settings and restores it on another machine, keeping both computers on the same plugin setup."
+    "description": "Pack or restore local plugins and DSH config from Settings: pick only local plugins, market plugins, plugin configs, DSH config, plugin switches or agent presets; link paths are rewritten and deps reinstalled as needed."
   }
 }

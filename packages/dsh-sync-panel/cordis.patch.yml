@@ -2,10 +2,18 @@
 # 字段含义见 README；路径类字段（profileDir / syncDir / pluginsRoot）一律不写死，
 # 走代码默认值（基于 os.homedir()），这样在任何机器上装都能用。
 # 需要改的话，在 profile 的 cordis.patch.yml 里覆盖本行的 config 即可。
+#
+# 可勾选类别：local-plugins / market-plugins / plugin-configs /
+#             dsh-config / plugin-switches / presets
 - insert:
     - id: dsh-sync-panel
       name: '@yggizz/dsh-sync-panel'
       config:
-        includePresets: false
+        include:
+          - local-plugins
+          - market-plugins
+          - plugin-configs
+          - dsh-config
+          - plugin-switches
         installDeps: true
         forcePluginsRoot: false
