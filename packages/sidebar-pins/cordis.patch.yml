@@ -1,0 +1,3 @@
+- insert:
+    - id: sidebar-pins
+      name: '@yggizz/dsh-sidebar-pins'

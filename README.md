@@ -10,6 +10,9 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 |---|---|---|
 | [`@yggizz/dsh-theme-toggle`](packages/theme-toggle) | 标题栏里加一个深浅色切换按钮 | 主题与外观 |
 | [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
+| [`@yggizz/dsh-artifact-copy`](packages/dsh-artifact-copy) | 右键文件，复制相对路径、文本内容，或文件本体（原生剪贴板文件） | UI 增强 |
+| [`@yggizz/dsh-sidebar-pins`](packages/sidebar-pins) | 记住你收起了哪些左侧栏面板入口，重启照样生效 | UI 增强 |
+| [`@yggizz/dsh-workbuddy-turn-credits`](packages/dsh-workbuddy-turn-credits) | 在每轮回复里显示这一轮实际花了多少（credits 或人民币） | 用量与计费 |
 
 ## 安装
 

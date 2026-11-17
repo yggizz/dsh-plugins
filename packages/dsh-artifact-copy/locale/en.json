@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Artifact copy on right-click",
+    "description": "Right-click any file in a conversation to copy its relative path, its text contents, or the file itself. The file lands as a native clipboard file list (CF_HDROP on Windows, a POSIX file on macOS, text/uri-list on Linux), so it pastes directly into Explorer, Finder, a chat window, or a mail draft; on a folder the entry becomes Copy folder. These are the three things the page cannot do on its own, added after the shipped Copy file path row; delivered-file cards, inline file mentions and the sidebar tree share the same menu. Paths resolve against that session's working directory. Only loopback requests are answered, so a LAN origin cannot drive the clipboard; contents copy stops at 1 MiB and stays disabled for non-text files."
+  }
+}

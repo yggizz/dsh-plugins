@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sidebar pins",
+    "description": "Remembers which left-sidebar panel launchers you unpinned and re-applies that choice on every start."
+  }
+}

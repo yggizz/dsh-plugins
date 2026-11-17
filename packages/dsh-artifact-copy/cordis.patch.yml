@@ -1,0 +1,3 @@
+- insert:
+    - id: artifact-copy
+      name: '@yggizz/dsh-artifact-copy'
