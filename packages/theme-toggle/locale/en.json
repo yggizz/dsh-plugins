@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Theme toggle",
-    "description": "Adds a button beside the DeepSeek logo in the sidebar. Click it to switch between light and dark. While the appearance is set to follow the system, the first click pins the opposite of the current look."
+    "description": "Puts a light/dark switch at the sidebar foot: a labeled row while the sidebar is wide, an icon once it collapses. On the Windows desktop it stays in the window title bar, where it was."
   }
 }

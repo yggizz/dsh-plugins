@@ -1,8 +1,8 @@
 {
   "name": "@yggizz/dsh-theme-toggle",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
-  "description": "One-click light and dark theme toggle in the window title bar.",
+  "description": "One-click light and dark theme toggle in the window title bar, and at the sidebar foot on the Web.",
   "license": "MIT",
   "icon": "./icon.svg",
   "exports": {
