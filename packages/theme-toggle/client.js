@@ -19,7 +19,7 @@
  * marker that lands after this module loads cannot leave both on screen.
  */
 window.__ModuleLoader__.load({
-  id: '@local/theme-toggle',
+  id: '@yggizz/dsh-theme-toggle',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
