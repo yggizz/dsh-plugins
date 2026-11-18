@@ -47,7 +47,7 @@
         "en": "Right-click any file in a conversation to copy its relative path, its text contents, or the file itself. The file lands as a native clipboard file list (CF_HDROP on Windows, a POSIX file on macOS, text/uri-list on Linux), so it pastes directly into Explorer, Finder, a chat window, or a mail draft; on a folder the entry becomes Copy folder. These are the three things the page cannot do on its own, added after the shipped Copy file path row; delivered-file cards, inline file mentions and the sidebar tree share the same menu. Paths resolve against that session's working directory. Only loopback requests are answered, so a LAN origin cannot drive the clipboard; contents copy stops at 1 MiB and stays disabled for non-text files.",
         "zh": "在对话里右键任意文件，复制它的相对路径、文本内容或文件本体。文件本体是原生剪贴板文件（Windows CF_HDROP、macOS 文件对象、Linux text/uri-list），可以直接粘贴进资源管理器、访达、聊天窗口或邮件。目录右键时该项自动变为「复制文件夹」。三项都是浏览器页面自己做不到的事，补在 DSH 自带「复制文件路径」之后；交付卡片、行内文件引用和侧边栏文件树共用同一份右键菜单。路径以该会话工作目录为基准解析。插件只响应本机回环请求，局域网来源无法驱动剪贴板；文件内容复制上限 1 MiB，非文本文件该项置灰。"
       },
-      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/1cb5505554f70130fdb2da9a770aaa315928433f/packages/dsh-artifact-copy/icon.svg",
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/d93ab5cd0bebc2ebb365a607481aba30ec56439e/packages/dsh-artifact-copy/icon.svg",
       "author": "yggizz",
       "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-artifact-copy#readme",
       "repository": {
@@ -60,11 +60,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1795021756,
+          "publishTimestamp": 1795025358,
           "source": {
             "type": "git",
             "url": "https://github.com/yggizz/dsh-plugins",
-            "commit": "1cb5505554f70130fdb2da9a770aaa315928433f",
+            "commit": "d93ab5cd0bebc2ebb365a607481aba30ec56439e",
             "path": "packages/dsh-artifact-copy"
           },
           "engines": {
@@ -83,7 +83,7 @@
         "en": "Pack or restore local plugins and DSH config from Settings: pick only local plugins, market plugins, plugin configs, DSH config, plugin switches or agent presets; link paths are rewritten and deps reinstalled as needed.",
         "zh": "设置页里一键打包 / 还原本地插件与 DSH 配置：可勾选只带本地插件、插件市场插件、插件配置、DSH 配置、插件开关或 Agent 预设，还原时自动改写 link 路径并按需重装依赖。"
       },
-      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/1cb5505554f70130fdb2da9a770aaa315928433f/packages/dsh-sync-panel/icon.svg",
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/d93ab5cd0bebc2ebb365a607481aba30ec56439e/packages/dsh-sync-panel/icon.svg",
       "author": "yggizz",
       "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-sync-panel#readme",
       "repository": {
@@ -96,11 +96,11 @@
       "versions": [
         {
           "version": "0.1.0",
-          "publishTimestamp": 1795021756,
+          "publishTimestamp": 1795025358,
           "source": {
             "type": "git",
             "url": "https://github.com/yggizz/dsh-plugins",
-            "commit": "1cb5505554f70130fdb2da9a770aaa315928433f",
+            "commit": "d93ab5cd0bebc2ebb365a607481aba30ec56439e",
             "path": "packages/dsh-sync-panel"
           },
           "engines": {
@@ -119,7 +119,7 @@
         "en": "Shows what each turn actually cost, inside that reply's action row: WorkBuddy sessions show credits, sessions on the official DeepSeek routes (account login or API key) show an amount in CNY. It measures rather than estimates: the matching balance is read at the start and again at the end of every turn, so each turn costs two read-only balance queries (no credits spent) and about a second of settle time at the end. A switched account, overlapping requests, or an unsettled balance shows an em dash instead of a number, and a session that uses none of these routes shows no row at all.",
         "zh": "在每轮回复的动作行里显示这一轮实际花掉的钱：走 WorkBuddy 的会话显示 credits，走 DeepSeek 官方（账号登录或 API Key）的会话显示人民币金额。它不估算：每轮开始与结束时各读一次对应余额，差值就是这一轮的扣费，因此每轮会多两次只读查询（不消耗额度）并在结束时多等约 1 秒让上游结算。换号、并发请求或余额尚未结算时显示「—」，不编造数字；不使用这几条线路的会话不显示这一行。"
       },
-      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/1cb5505554f70130fdb2da9a770aaa315928433f/packages/dsh-workbuddy-turn-credits/icon.svg",
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/d93ab5cd0bebc2ebb365a607481aba30ec56439e/packages/dsh-workbuddy-turn-credits/icon.svg",
       "author": "yggizz",
       "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-workbuddy-turn-credits#readme",
       "repository": {
@@ -132,11 +132,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1795021756,
+          "publishTimestamp": 1795025358,
           "source": {
             "type": "git",
             "url": "https://github.com/yggizz/dsh-plugins",
-            "commit": "1cb5505554f70130fdb2da9a770aaa315928433f",
+            "commit": "d93ab5cd0bebc2ebb365a607481aba30ec56439e",
             "path": "packages/dsh-workbuddy-turn-credits"
           },
           "engines": {
@@ -155,7 +155,7 @@
         "en": "Remembers which left-sidebar panel launchers you unpinned and re-applies that choice on every start.",
         "zh": "记住你取消了哪些左侧栏面板入口，每次启动自动恢复同样的选择，不会被重新塞回一排按钮。"
       },
-      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/1cb5505554f70130fdb2da9a770aaa315928433f/packages/sidebar-pins/icon.svg",
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/d93ab5cd0bebc2ebb365a607481aba30ec56439e/packages/sidebar-pins/icon.svg",
       "author": "yggizz",
       "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/sidebar-pins#readme",
       "repository": {
@@ -168,11 +168,11 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1795021756,
+          "publishTimestamp": 1795025358,
           "source": {
             "type": "git",
             "url": "https://github.com/yggizz/dsh-plugins",
-            "commit": "1cb5505554f70130fdb2da9a770aaa315928433f",
+            "commit": "d93ab5cd0bebc2ebb365a607481aba30ec56439e",
             "path": "packages/sidebar-pins"
           },
           "engines": {
@@ -191,7 +191,7 @@
         "en": "Puts a light/dark switch at the sidebar foot: a labeled row while the sidebar is wide, an icon once it collapses. On the Windows desktop it stays in the window title bar, where it was.",
         "zh": "在侧栏底部放一个深浅色切换按钮：侧栏展开时是带文字的整行，收起时是图标。Windows 客户端里它仍在窗口标题栏，位置不变。"
       },
-      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/1cb5505554f70130fdb2da9a770aaa315928433f/packages/theme-toggle/icon.svg",
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/d93ab5cd0bebc2ebb365a607481aba30ec56439e/packages/theme-toggle/icon.svg",
       "author": "yggizz",
       "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/theme-toggle#readme",
       "repository": {
@@ -204,11 +204,11 @@
       "versions": [
         {
           "version": "1.1.0",
-          "publishTimestamp": 1795021756,
+          "publishTimestamp": 1795025358,
           "source": {
             "type": "git",
             "url": "https://github.com/yggizz/dsh-plugins",
-            "commit": "1cb5505554f70130fdb2da9a770aaa315928433f",
+            "commit": "d93ab5cd0bebc2ebb365a607481aba30ec56439e",
             "path": "packages/theme-toggle"
           },
           "engines": {
