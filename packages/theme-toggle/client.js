@@ -1,5 +1,5 @@
 /**
- * Client half of `@local/theme-toggle`.
+ * Client half of `@yggizz/dsh-theme-toggle`.
  *
  * Two placements, picked by the environment the page runs in:
  *
