@@ -8,11 +8,21 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 
 | 包 | 做什么 | 分类 |
 |---|---|---|
-| [`@yggizz/dsh-theme-toggle`](packages/theme-toggle) | 标题栏里加一个深浅色切换按钮 | 主题与外观 |
+| [`@yggizz/dsh-theme-toggle`](packages/theme-toggle) | 一键深浅色切换：桌面客户端在标题栏，浏览器在左侧栏底部 | 主题与外观 |
 | [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
 | [`@yggizz/dsh-artifact-copy`](packages/dsh-artifact-copy) | 右键文件，复制相对路径、文本内容，或文件本体（原生剪贴板文件） | UI 增强 |
 | [`@yggizz/dsh-sidebar-pins`](packages/sidebar-pins) | 记住你收起了哪些左侧栏面板入口，重启照样生效 | UI 增强 |
 | [`@yggizz/dsh-workbuddy-turn-credits`](packages/dsh-workbuddy-turn-credits) | 在每轮回复里显示这一轮实际花了多少（credits 或人民币） | 用量与计费 |
+
+## 插件市场
+
+这个仓库自带一份 format-1 索引，可以直接加进 DSH 的 **插件 → 发现 → 索引源**：
+
+```
+https://yggizz.github.io/dsh-plugins/index.json
+```
+
+同一份文件在 `https://cdn.jsdelivr.net/gh/yggizz/dsh-plugins@main/index.json` 也有一份，GitHub Pages 慢的时候换这个。
 
 ## 安装
 
