@@ -16,10 +16,12 @@ const localeDir = path.join(here, '..', 'locale')
 const FEATURES = [
   ['artifact-copy'],
   ['theme-toggle'],
+  ['refresh-restart'],
   ['turn-credits'],
   ['hide-branch'],
   ['sidebar-pins'],
   ['rightbar-default-open'],
+  ['archive-filter-toggle'],
 ]
 
 /**

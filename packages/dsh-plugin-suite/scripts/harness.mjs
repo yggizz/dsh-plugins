@@ -32,6 +32,11 @@ const React = {
   Fragment: 'Fragment',
 }
 
+/** `react-dom` is in the client module table; only the portal is used here. */
+const ReactDOM = {
+  createPortal: (element, container) => ({ type: 'portal', element, container }),
+}
+
 /** Build a context that owns one fiber's cleanups. */
 function makeCtx(parentCleanups, name) {
   const own = []
@@ -107,6 +112,7 @@ globalThis.window = {
   innerWidth: 1440,
   addEventListener: () => {},
   removeEventListener: () => {},
+  dispatchEvent: () => true,
   __dshSidebarPins: undefined,
 }
 globalThis.document = {
@@ -135,6 +141,7 @@ globalThis.fetch = async (url, options) => {
 new Function(source)()
 const plugin = factory((name) => {
   if (name === 'react') return React
+  if (name === 'react-dom') return ReactDOM
   throw new Error(`unexpected require: ${name}`)
 })
 plugin.apply(makeCtx(undefined, 'suite'))
@@ -187,11 +194,14 @@ setTimeout(async () => {
   console.log('all on :', JSON.stringify(allOn))
 
   const cleanOff = allOff.mounted === 0 && allOff.slots === 1 && allOff.menus === 0
-  const backOn = allOn.mounted === 6 && allOn.slots === base.slots && allOn.effects === base.effects
+  // The feature count comes from the bundle's own diagnostic handle, so adding a
+  // feature does not silently require editing this assertion.
+  const expected = globalThis.window.__dshPluginSuite.features.length
+  const backOn = allOn.mounted === expected && allOn.slots === base.slots && allOn.effects === base.effects
     && allOn.styles === base.styles && allOn.menus === base.menus
 
-  console.log('checks:', JSON.stringify({ stable, offDropped, cleanOff, backOn }))
-  const ok = mounted.slots > 0 && mounted.fibers >= 6 && stable && offDropped && cleanOff && backOn
+  console.log('checks:', JSON.stringify({ stable, offDropped, cleanOff, backOn, expected }))
+  const ok = mounted.slots > 0 && mounted.fibers >= expected && stable && offDropped && cleanOff && backOn
   console.log(ok ? 'PASS: mount/unmount clean over 3 rounds, all-off leaves nothing, all-on restores' : 'FAIL')
   process.exit(ok ? 0 : 1)
 }, 400)

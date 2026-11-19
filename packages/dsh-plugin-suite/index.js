@@ -8,13 +8,14 @@
  *     the first frame after a reload mounts the right features without a flash,
  *     but this file is the authority: it survives a Web origin port change
  *     between Desktop launches, a different browser, and a wiped profile.
- *  2. **The two features that need a Host** — the file right-click copy routes
- *     and the per-turn spend routes plus its session feed. Both live in
- *     `features/host/*.js` **verbatim** and are mounted as their own Cordis
- *     fibers, so a switch is a real uninstall on this side too: disposing the
- *     fiber unregisters the routes and drops the `session/event` listener.
+ *  2. **The features that need a Host** — the file right-click copy routes, the
+ *     per-turn spend routes plus its session feed, and the refresh/restart
+ *     relaunch route. All live in `features/host/*.js` **verbatim** and are
+ *     mounted as their own Cordis fibers, so a switch is a real uninstall on
+ *     this side too: disposing the fiber unregisters the routes and drops the
+ *     `session/event` listener.
  *
- * The other four features are Client-only; `client.js` mounts and unmounts them.
+ * The other features are Client-only; `client.js` mounts and unmounts them.
  *
  * Route security is the same rule the shipped connector routes use: only a
  * loopback Host header is answered, so a LAN origin cannot drive the document.
@@ -24,6 +25,7 @@ import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 import { apply as applyArtifactCopy } from './features/host/artifact-copy.js'
 import { apply as applyTurnCredits } from './features/host/turn-credits.js'
+import { apply as applyRestart } from './features/host/restart.js'
 
 /* --------------------------------------------------------------- paths ---- */
 
@@ -44,10 +46,12 @@ function stateFile() {
 const FEATURE_IDS = [
   'artifact-copy',
   'theme-toggle',
+  'refresh-restart',
   'turn-credits',
   'hide-branch',
   'sidebar-pins',
   'rightbar-default-open',
+  'archive-filter-toggle',
 ]
 
 /** The switch document's shape version. */
@@ -60,6 +64,7 @@ const STATE_VERSION = 1
 const HOST_FEATURES = new Map([
   ['artifact-copy', applyArtifactCopy],
   ['turn-credits', applyTurnCredits],
+  ['refresh-restart', applyRestart],
 ])
 
 /* ----------------------------------------------------------------- http ---- */
