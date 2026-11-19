@@ -1,8 +1,8 @@
 {
   "name": "@yggizz/dsh-theme-toggle",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
-  "description": "One-click light and dark theme toggle in the window title bar, and at the sidebar foot on the Web.",
+  "description": "One-click light and dark theme toggle in the Windows window caption that follows the sidebar, and at the sidebar foot on the Web.",
   "license": "MIT",
   "icon": "./icon.svg",
   "exports": {
@@ -21,11 +21,15 @@
     "README.md"
   ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
       "immediately": true,
-      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
     }
   },
   "engines": {
