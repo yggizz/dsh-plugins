@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "title": "Plugin suite",
+    "description": "Six small local features in one bundle: file right-click copy, light/dark toggle, per-turn spend, hidden branch button, remembered unpinned panels, right sidebar open by default. Each has its own switch under Settings → Plugin suite, applied immediately. The configuration lives in ~/.dsh/plugin-suite.json."
+  },
+  "settings": {
+    "title": "Plugin suite",
+    "nav": "Plugin suite",
+    "subtitle": "Manage the six independent features. Changes apply immediately.",
+    "enableAll": "Enable all",
+    "disableAll": "Disable all",
+    "saved": "Configuration saved in",
+    "loadFailed": "Could not read the configuration; showing the last cached switch state.",
+    "saveFailed": "Save failed; the switch was reverted.",
+    "busy": "Applying…",
+    "features": {
+      "artifact-copy": {
+        "title": "File right-click copy",
+        "description": "Right-click a file in the conversation to copy its path, relative path, contents, or the file itself."
+      },
+      "theme-toggle": {
+        "title": "Theme toggle",
+        "description": "One button in the window caption (Windows) or at the sidebar foot switches light and dark."
+      },
+      "turn-credits": {
+        "title": "Per-turn spend",
+        "description": "Shows what each completed turn cost, in credits or CNY, on that reply's action row."
+      },
+      "hide-branch": {
+        "title": "Hide \"branch into a new conversation\"",
+        "description": "Removes the branch button from assistant messages."
+      },
+      "sidebar-pins": {
+        "title": "Remember unpinned panels",
+        "description": "Keeps the sidebar panels you unpinned unpinned after a restart."
+      },
+      "rightbar-default-open": {
+        "title": "Right sidebar open by default",
+        "description": "Expands the right column when a session appears; left alone under 768px so it never covers the conversation."
+      }
+    }
+  }
+}

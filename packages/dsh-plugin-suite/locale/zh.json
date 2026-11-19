@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "title": "小插件套件",
+    "description": "把六个自研小功能装进一个插件包：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开。设置 → 小插件 里可以逐个开关，改动即时生效。配置保存在 ~/.dsh/plugin-suite.json。"
+  },
+  "settings": {
+    "title": "小插件",
+    "nav": "小插件",
+    "subtitle": "管理套件里的六个独立功能，开关即时生效。",
+    "enableAll": "全部开启",
+    "disableAll": "全部关闭",
+    "saved": "配置保存在",
+    "loadFailed": "读取配置失败，显示的是上次缓存的开关状态。",
+    "saveFailed": "保存失败，开关已回退。",
+    "busy": "正在应用…",
+    "features": {
+      "artifact-copy": {
+        "title": "文件右键复制",
+        "description": "在对话里的文件上右键，复制路径、相对路径、文件内容或文件本体。"
+      },
+      "theme-toggle": {
+        "title": "深浅色切换",
+        "description": "标题栏（Windows 客户端）或侧栏底部一个按钮切换明暗主题。"
+      },
+      "turn-credits": {
+        "title": "每轮花费",
+        "description": "在每条回复的操作行显示这一轮实际花掉的积分或人民币。"
+      },
+      "hide-branch": {
+        "title": "隐藏「分支到新会话」",
+        "description": "去掉助手消息上那个分支按钮。"
+      },
+      "sidebar-pins": {
+        "title": "记住取消固定的面板",
+        "description": "重启后仍然保持你取消固定的侧栏面板。"
+      },
+      "rightbar-default-open": {
+        "title": "右侧栏默认展开",
+        "description": "会话出现时自动展开右栏；窄于 768px 不展开，避免遮住对话。"
+      }
+    }
+  }
+}
