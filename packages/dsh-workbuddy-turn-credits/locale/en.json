@@ -1,6 +1,0 @@
-{
-  "meta": {
-    "title": "Per-turn spend (credits or money)",
-    "description": "Shows what each turn actually cost, inside that reply's action row: WorkBuddy sessions show credits, sessions on the official DeepSeek routes (account login or API key) show an amount in CNY. It measures rather than estimates: the matching balance is read at the start and again at the end of every turn, so each turn costs two read-only balance queries (no credits spent) and about a second of settle time at the end. A switched account, overlapping requests, or an unsettled balance shows an em dash instead of a number, and a session that uses none of these routes shows no row at all."
-  }
-}

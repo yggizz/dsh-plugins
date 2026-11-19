@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" role="img" aria-label="WorkBuddy turn credits">
-  <circle cx="18" cy="18" r="9.5" fill="none" stroke="#3f7f6f" stroke-width="3"/>
-  <path d="M18 12.5v11" stroke="#3f7f6f" stroke-width="3" stroke-linecap="round"/>
-  <path d="M12.5 18h11" stroke="#3f7f6f" stroke-width="3" stroke-linecap="round"/>
-  <path d="M25.2 25.2a8.6 8.6 0 0 0 4.1-6.3" fill="none" stroke="#7fb3a4" stroke-width="2" stroke-linecap="round"/>
-</svg>

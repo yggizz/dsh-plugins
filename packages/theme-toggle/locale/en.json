@@ -1,6 +1,0 @@
-{
-  "meta": {
-    "title": "Theme toggle",
-    "description": "Puts a light/dark switch in the Windows window caption, and moves it with the sidebar as that column expands and collapses. On the Web it sits at the sidebar foot: a labeled row while the column is wide, an icon once it collapses."
-  }
-}
