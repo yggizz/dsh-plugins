@@ -862,6 +862,14 @@ function selectorFor(labels) {
  * the launchers you unpin, keeps the list in `localStorage` plus a cookie
  * (cookies ignore the port, which changes between Desktop launches), and
  * replays the same unpin action early on every start.
+ *
+ * Why the More menu needs its own row lookup: the menu draws one entry as
+ * `<div class=sidebarEntry><launcher/><span class=pinAnchor><pin/></span></div>`
+ * — the pin control sits one wrapper deeper than the launcher, so the row is
+ * the nearest ancestor holding exactly two `button[role="menuitem"]`, not the
+ * pin button's direct parent. Reading the direct parent (the old rule) could
+ * never match, so every pin click went unnoticed and the replay immediately
+ * put the launcher back into More.
  */
 
     /** Same JSON list in both places; the cookie survives an origin port change. */
@@ -872,9 +880,13 @@ function selectorFor(labels) {
     const RETRY_MS = 2500;
     /** Collapse one burst of DOM mutations into one replay pass. */
     const SETTLE_MS = 250;
+    /** A just-pinned launcher is left alone this long, whatever the DOM does. */
+    const PINNED_QUIET_MS = 2000;
 
     const desired = new Set(readNames());
     const lastClick = new Map();
+    /** Launcher name → when it was pinned by hand; replay skips the quiet window. */
+    const pinnedAt = new Map();
     let observer;
     let settleTimer;
     let disposers = [];
@@ -883,11 +895,16 @@ function selectorFor(labels) {
       return typeof value === 'string' && value.trim().length > 0;
     }
 
+    /** One panel name as both the sidebar row and the More menu spell it. */
+    function normalize(value) {
+      return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+    }
+
     function parseNames(raw) {
       if (!isName(raw)) return [];
       try {
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed.filter(isName) : [];
+        return Array.isArray(parsed) ? parsed.map(normalize).filter(isName) : [];
       } catch (_error) {
         return [];
       }
@@ -963,7 +980,7 @@ function selectorFor(labels) {
         if (pair === null) continue;
         const unpin = pair[0] === button ? pair[1] : pair[0];
         if (unpin === button || isRowLabel(unpin)) continue;
-        rows.push({ name: (button.getAttribute('aria-label') || '').trim(), unpin });
+        rows.push({ name: normalize(button.getAttribute('aria-label')), unpin });
       }
       return rows;
     }
@@ -975,32 +992,60 @@ function selectorFor(labels) {
       if (pair === null) return null;
       const other = pair[0] === button ? pair[1] : pair[0];
       if (!isRowLabel(other)) return null;
-      return (other.getAttribute('aria-label') || '').trim();
+      return normalize(other.getAttribute('aria-label'));
+    }
+
+    /**
+     * The row inside one open menu that holds this control and its launcher.
+     *
+     * The launcher and the pin control are not siblings: each may sit inside a
+     * positioning wrapper of its own, so the row is the first ancestor of the
+     * clicked control that contains exactly two menu items and still lies
+     * inside the menu itself.
+     * @param button - the clicked control.
+     * @returns both menu items of the row, or null outside a menu.
+     */
+    function menuRow(button) {
+      const menu = typeof button.closest === 'function' ? button.closest('[role="menu"]') : null;
+      if (menu === null) return null;
+      let node = button.parentElement;
+      while (node !== null && node !== menu) {
+        const items = [...node.querySelectorAll('button[role="menuitem"]')];
+        if (items.length === 2) return items;
+        node = node.parentElement;
+      }
+      return null;
     }
 
     /** The clicked control is the More menu's pin action: report its row label. */
     function pinTarget(button) {
       if ((button.getAttribute('role') || '') !== 'menuitem') return null;
-      const label = (button.getAttribute('aria-label') || '').trim();
-      /* The launcher row inside the menu carries the entry text; the pin action is icon-only. */
-      if (label.length === 0 || (button.textContent || '').trim().length !== 0) return null;
-      const row = button.parentElement;
-      if (row === null) return null;
-      if (row.querySelectorAll('button').length !== 2) return null;
-      const name = (row.textContent || '').trim();
+      /* The pin action is icon-only; the launcher row beside it carries the text. */
+      if ((button.textContent || '').trim().length !== 0) return null;
+      const pair = menuRow(button);
+      if (pair === null) return null;
+      const launcher = pair.find(item => item !== button && (item.textContent || '').trim().length > 0);
+      if (launcher === undefined) return null;
+      const name = normalize(launcher.textContent);
       return name.length > 0 ? name : null;
     }
 
     function addName(name) {
-      if (!isName(name) || desired.has(name)) return;
-      desired.add(name);
+      const key = normalize(name);
+      if (!isName(key) || desired.has(key)) return;
+      desired.add(key);
+      pinnedAt.delete(key);
       persist();
       apply();
     }
 
     function removeName(name) {
-      if (!isName(name) || !desired.has(name)) return;
-      desired.delete(name);
+      const key = normalize(name);
+      if (!isName(key)) return;
+      /* Recorded even when the name was already gone: the replay may still be armed. */
+      pinnedAt.set(key, Date.now());
+      if (!desired.has(key)) return;
+      desired.delete(key);
       persist();
     }
 
@@ -1017,6 +1062,7 @@ function selectorFor(labels) {
       const now = Date.now();
       for (const name of [...desired]) {
         if (now - (lastClick.get(name) || 0) < RETRY_MS) continue;
+        if (now - (pinnedAt.get(name) || 0) < PINNED_QUIET_MS) continue;
         const nav = sidebarNav();
         if (nav === null) return;
         const row = panelRows(nav).find(candidate => candidate.name === name);
@@ -1071,6 +1117,7 @@ function selectorFor(labels) {
 
         window.__dshSidebarPins = {
           list: () => [...desired],
+          pinned: name => pinnedAt.has(normalize(name)),
           add: name => addName(name),
           remove: name => removeName(name),
           apply,
@@ -1098,12 +1145,12 @@ function selectorFor(labels) {
  * `expanded: false`, and the column only opens when you open something into it
  * or press the expand control. The expanded flag is then persisted per session
  * in `localStorage` under `dsh.sidebar-right.v1.<sessionId>`, so a session you
- * once opened comes back open — but a brand-new session always starts closed.
+ * once opened comes back open — but a brand-new session starts closed.
  *
- * This module flips that default: as soon as a session comes on screen, the
- * column is expanded once. The decision is made once per session per page load
- * (`handled`), so collapsing the column afterwards stays collapsed; a reload
- * opens it again, which is exactly what "default open" means.
+ * This module flips that default: when a session comes on screen the column is
+ * expanded for it. The decision is made once per session per page load
+ * (`settled`), so collapsing the column afterwards stays collapsed until the
+ * next reload — which is what "default open, but I may still close it" means.
  *
  * How it talks to the host: only through the public `ctx.sidebarRight` face —
  * `mounted` (the on-screen session), `isExpanded()` and `toggleExpanded()`.
@@ -1111,32 +1158,59 @@ function selectorFor(labels) {
  * toggles when the column is actually collapsed; calling toggle blindly would
  * close a column the user had open.
  *
- * The surface is minted by the seat during the same render that publishes
- * `mounted`, so the first attempt can land before the store exists — the
- * controller then throws `no session surface is mounted`. Every attempt is
- * therefore guarded and retried on a short schedule until `isExpanded()` reads
- * true, and the session is only marked handled once that is observed.
+ * The seat refuses an expansion it cannot afford: `RightbarSeat` collapses a
+ * shown panel again as soon as `canShow` is false (the frame needs
+ * `viewport − sidebar − 400 ≥ 300`). So "did it stay open" is read back from
+ * `isExpanded()` rather than assumed from the toggle call: one verification
+ * after the commit, and on a slow mint the whole attempt is re-armed on a
+ * watch window an order of magnitude longer than the old fixed ladder. Two
+ * refused attempts settle the session as "no room", so a narrow window gets no
+ * open/shut flicker and no retry storm.
  *
- * Narrow viewports are left alone: below 768px the host presents an expanded
- * column FULLSCREEN, so auto-opening would cover the conversation on every
- * launch. The column stays collapsed there and the expand control still works.
+ * Narrow viewports stay collapsed on purpose: below 768px the host presents an
+ * expanded column FULLSCREEN, so auto-opening would cover the conversation.
+ * The expand control still works there.
  */
 
     /** Below this frame width an expanded column is drawn fullscreen by the host. */
     const NARROW_WIDTH = 768;
-    /** Retry schedule (ms) for a surface that is not minted yet. */
-    const RETRY_DELAYS = [0, 60, 160, 360, 700, 1200, 2000, 3200];
+    /** Watch window for a session whose surface or room is not ready yet. */
+    const WATCH_MS = 30000;
+    /** Re-arm interval inside the watch window. */
+    const RETRY_MS = 400;
+    /** Let the seat's commit land before reading `isExpanded()` back. */
+    const VERIFY_MS = 300;
+    /** How many refused expansions settle a session as "no room on this frame". */
+    const MAX_REFUSALS = 2;
 
     return {
       inject: [],
       apply(ctx) {
-        /** Sessions already opened by this page load; collapsing afterwards is respected. */
-        const handled = new Set();
-        /** Live retry timers, cleared on teardown. */
-        const timers = new Set();
+        /** Sessions with a final answer for this page load; later collapses are respected. */
+        const settled = new Set();
+        /** Session → how many expansions were asked for and did not stay. */
+        const refusals = new Map();
+        /** Session → its single pending timer. */
+        const timers = new Map();
         let disposed = false;
         let unsubscribe = null;
         let waitTimer = null;
+
+        const clearTimer = sessionId => {
+          const timer = timers.get(sessionId);
+          if (timer === undefined) return;
+          window.clearTimeout(timer);
+          timers.delete(sessionId);
+        };
+
+        const later = (sessionId, delay, run) => {
+          clearTimer(sessionId);
+          const timer = window.setTimeout(() => {
+            timers.delete(sessionId);
+            run();
+          }, delay);
+          timers.set(sessionId, timer);
+        };
 
         // The controller is provided through `ctx.reflect.provide('sidebarRight')`;
         // `ctx.get` is the late-binding read (the service can arrive after this
@@ -1158,54 +1232,90 @@ function selectorFor(labels) {
           && window.innerWidth > 0
           && window.innerWidth < NARROW_WIDTH;
 
-        /**
-         * Try to expand the column for one session.
-         * @param sessionId - the session the host reports as on screen.
-         * @param attempt - index into {@link RETRY_DELAYS}.
-         */
-        const attempt = (sessionId, attemptIndex) => {
-          if (disposed || handled.has(sessionId)) return;
-          const face = column();
-          if (face === undefined || typeof face.isExpanded !== 'function') return;
-          if (narrow()) return;
-          // A session switch during a retry series must not open the wrong one.
-          const onScreen = face.mounted && typeof face.mounted.getSnapshot === 'function'
-            ? face.mounted.getSnapshot()
-            : undefined;
-          if (onScreen !== sessionId) return;
+        /** The session the host reports as on screen, if the face is bound. */
+        const onScreenSession = face => face !== undefined && face.mounted
+          && typeof face.mounted.getSnapshot === 'function'
+          ? face.mounted.getSnapshot()
+          : undefined;
+
+        const expandedNow = face => {
           try {
-            if (face.isExpanded() === true) {
-              handled.add(sessionId);
-              return;
-            }
-            face.toggleExpanded();
-            if (face.isExpanded() === true) {
-              handled.add(sessionId);
-              return;
-            }
+            return typeof face.isExpanded === 'function' && face.isExpanded() === true;
           } catch (_error) {
-            /* The session's store is not minted yet: retry below. */
+            /* The session's store is not minted yet. */
+            return false;
           }
-          schedule(sessionId, attemptIndex + 1);
         };
 
-        const schedule = (sessionId, attemptIndex) => {
-          if (disposed || attemptIndex >= RETRY_DELAYS.length) return;
-          const timer = window.setTimeout(() => {
-            timers.delete(timer);
-            attempt(sessionId, attemptIndex);
-          }, RETRY_DELAYS[attemptIndex]);
-          timers.add(timer);
+        /** Give up retrying, but let the expand control keep working by hand. */
+        const settle = sessionId => {
+          clearTimer(sessionId);
+          settled.add(sessionId);
         };
 
-        /** React to the on-screen session: open the column the first time each one appears. */
+        const arm = (sessionId, sessionIdFn, deadline) => {
+          if (disposed || settled.has(sessionId)) return;
+          const remaining = deadline - Date.now();
+          if (remaining <= 0) {
+            settle(sessionId);
+            return;
+          }
+          later(sessionId, Math.min(RETRY_MS, remaining), () => { attempt(sessionId, deadline) });
+        };
+
+        /**
+         * Ask for one expansion and verify it stayed.
+         * @param sessionId - the session the host reports as on screen.
+         * @param deadline - when to stop watching.
+         */
+        const attempt = (sessionId, deadline) => {
+          if (disposed || settled.has(sessionId)) return;
+          const face = column();
+          if (face === undefined || typeof face.isExpanded !== 'function') {
+            arm(sessionId, deadline);
+            return;
+          }
+          if (narrow()) {
+            settle(sessionId);
+            return;
+          }
+          // A session switch during a watch must not open the wrong one.
+          if (onScreenSession(face) !== sessionId) return;
+          if (expandedNow(face)) {
+            settle(sessionId);
+            return;
+          }
+          try {
+            face.toggleExpanded();
+          } catch (_error) {
+            // No surface yet: the seat mints it a moment later, so keep watching.
+            arm(sessionId, deadline);
+            return;
+          }
+          later(sessionId, VERIFY_MS, () => {
+            if (disposed || settled.has(sessionId)) return;
+            const live = column();
+            if (expandedNow(live)) {
+              settle(sessionId);
+              return;
+            }
+            const count = (refusals.get(sessionId) || 0) + 1;
+            refusals.set(sessionId, count);
+            if (count >= MAX_REFUSALS) {
+              // The seat folded it back: this frame has no room for the column.
+              settle(sessionId);
+              return;
+            }
+            arm(sessionId, deadline);
+          });
+        };
+
+        /** Open the column for whichever session just came on screen. */
         const onMounted = () => {
           const face = column();
-          const sessionId = face && face.mounted && typeof face.mounted.getSnapshot === 'function'
-            ? face.mounted.getSnapshot()
-            : undefined;
-          if (sessionId === undefined || handled.has(sessionId)) return;
-          attempt(sessionId, 0);
+          const sessionId = onScreenSession(face);
+          if (sessionId === undefined || settled.has(sessionId) || timers.has(sessionId)) return;
+          attempt(sessionId, Date.now() + WATCH_MS);
         };
 
         /** Bind to the controller once it is provided; it can arrive after this module loads. */
@@ -1222,13 +1332,26 @@ function selectorFor(labels) {
 
         ensureBound();
 
+        window.__dshRightbarDefaultOpen = {
+          settled: () => [...settled],
+          refusals: () => Object.fromEntries(refusals),
+          /** Forget the decisions and try once more, e.g. after widening the window. */
+          retry: () => {
+            for (const sessionId of [...timers.keys()]) clearTimer(sessionId);
+            settled.clear();
+            refusals.clear();
+            onMounted();
+          },
+        };
+
         ctx.effect(() => () => {
           disposed = true;
           if (waitTimer !== null) window.clearTimeout(waitTimer);
-          for (const timer of timers) window.clearTimeout(timer);
+          for (const timer of timers.values()) window.clearTimeout(timer);
           timers.clear();
           if (typeof unsubscribe === 'function') unsubscribe();
           unsubscribe = null;
+          delete window.__dshRightbarDefaultOpen;
         });
       },
     };

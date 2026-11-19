@@ -7,6 +7,14 @@
  * the launchers you unpin, keeps the list in `localStorage` plus a cookie
  * (cookies ignore the port, which changes between Desktop launches), and
  * replays the same unpin action early on every start.
+ *
+ * Why the More menu needs its own row lookup: the menu draws one entry as
+ * `<div class=sidebarEntry><launcher/><span class=pinAnchor><pin/></span></div>`
+ * — the pin control sits one wrapper deeper than the launcher, so the row is
+ * the nearest ancestor holding exactly two `button[role="menuitem"]`, not the
+ * pin button's direct parent. Reading the direct parent (the old rule) could
+ * never match, so every pin click went unnoticed and the replay immediately
+ * put the launcher back into More.
  */
 window.__ModuleLoader__.load({
   id: '@local/sidebar-pins',
@@ -19,9 +27,13 @@ window.__ModuleLoader__.load({
     const RETRY_MS = 2500;
     /** Collapse one burst of DOM mutations into one replay pass. */
     const SETTLE_MS = 250;
+    /** A just-pinned launcher is left alone this long, whatever the DOM does. */
+    const PINNED_QUIET_MS = 2000;
 
     const desired = new Set(readNames());
     const lastClick = new Map();
+    /** Launcher name → when it was pinned by hand; replay skips the quiet window. */
+    const pinnedAt = new Map();
     let observer;
     let settleTimer;
     let disposers = [];
@@ -30,11 +42,16 @@ window.__ModuleLoader__.load({
       return typeof value === 'string' && value.trim().length > 0;
     }
 
+    /** One panel name as both the sidebar row and the More menu spell it. */
+    function normalize(value) {
+      return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+    }
+
     function parseNames(raw) {
       if (!isName(raw)) return [];
       try {
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed.filter(isName) : [];
+        return Array.isArray(parsed) ? parsed.map(normalize).filter(isName) : [];
       } catch (_error) {
         return [];
       }
@@ -110,7 +127,7 @@ window.__ModuleLoader__.load({
         if (pair === null) continue;
         const unpin = pair[0] === button ? pair[1] : pair[0];
         if (unpin === button || isRowLabel(unpin)) continue;
-        rows.push({ name: (button.getAttribute('aria-label') || '').trim(), unpin });
+        rows.push({ name: normalize(button.getAttribute('aria-label')), unpin });
       }
       return rows;
     }
@@ -122,32 +139,60 @@ window.__ModuleLoader__.load({
       if (pair === null) return null;
       const other = pair[0] === button ? pair[1] : pair[0];
       if (!isRowLabel(other)) return null;
-      return (other.getAttribute('aria-label') || '').trim();
+      return normalize(other.getAttribute('aria-label'));
+    }
+
+    /**
+     * The row inside one open menu that holds this control and its launcher.
+     *
+     * The launcher and the pin control are not siblings: each may sit inside a
+     * positioning wrapper of its own, so the row is the first ancestor of the
+     * clicked control that contains exactly two menu items and still lies
+     * inside the menu itself.
+     * @param button - the clicked control.
+     * @returns both menu items of the row, or null outside a menu.
+     */
+    function menuRow(button) {
+      const menu = typeof button.closest === 'function' ? button.closest('[role="menu"]') : null;
+      if (menu === null) return null;
+      let node = button.parentElement;
+      while (node !== null && node !== menu) {
+        const items = [...node.querySelectorAll('button[role="menuitem"]')];
+        if (items.length === 2) return items;
+        node = node.parentElement;
+      }
+      return null;
     }
 
     /** The clicked control is the More menu's pin action: report its row label. */
     function pinTarget(button) {
       if ((button.getAttribute('role') || '') !== 'menuitem') return null;
-      const label = (button.getAttribute('aria-label') || '').trim();
-      /* The launcher row inside the menu carries the entry text; the pin action is icon-only. */
-      if (label.length === 0 || (button.textContent || '').trim().length !== 0) return null;
-      const row = button.parentElement;
-      if (row === null) return null;
-      if (row.querySelectorAll('button').length !== 2) return null;
-      const name = (row.textContent || '').trim();
+      /* The pin action is icon-only; the launcher row beside it carries the text. */
+      if ((button.textContent || '').trim().length !== 0) return null;
+      const pair = menuRow(button);
+      if (pair === null) return null;
+      const launcher = pair.find(item => item !== button && (item.textContent || '').trim().length > 0);
+      if (launcher === undefined) return null;
+      const name = normalize(launcher.textContent);
       return name.length > 0 ? name : null;
     }
 
     function addName(name) {
-      if (!isName(name) || desired.has(name)) return;
-      desired.add(name);
+      const key = normalize(name);
+      if (!isName(key) || desired.has(key)) return;
+      desired.add(key);
+      pinnedAt.delete(key);
       persist();
       apply();
     }
 
     function removeName(name) {
-      if (!isName(name) || !desired.has(name)) return;
-      desired.delete(name);
+      const key = normalize(name);
+      if (!isName(key)) return;
+      /* Recorded even when the name was already gone: the replay may still be armed. */
+      pinnedAt.set(key, Date.now());
+      if (!desired.has(key)) return;
+      desired.delete(key);
       persist();
     }
 
@@ -164,6 +209,7 @@ window.__ModuleLoader__.load({
       const now = Date.now();
       for (const name of [...desired]) {
         if (now - (lastClick.get(name) || 0) < RETRY_MS) continue;
+        if (now - (pinnedAt.get(name) || 0) < PINNED_QUIET_MS) continue;
         const nav = sidebarNav();
         if (nav === null) return;
         const row = panelRows(nav).find(candidate => candidate.name === name);
@@ -218,6 +264,7 @@ window.__ModuleLoader__.load({
 
         window.__dshSidebarPins = {
           list: () => [...desired],
+          pinned: name => pinnedAt.has(normalize(name)),
           add: name => addName(name),
           remove: name => removeName(name),
           apply,
