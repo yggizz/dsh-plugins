@@ -6,7 +6,7 @@
   },
   "description": {
     "en": "Small, dependency-free DeepSeek Harness plugins: a seven-feature suite with per-feature switches, and a profile pack/restore panel.",
-    "zh": "一组无依赖的小插件：一个带逐项开关的六合一插件套件，以及 profile 打包迁移面板。"
+    "zh": "一组无依赖的小插件：一个带逐项开关的七合一插件套件，以及 profile 打包迁移面板。"
   },
   "metadata": {
     "categories": {

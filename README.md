@@ -8,11 +8,10 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 
 | 包 | 做什么 | 分类 |
 |---|---|---|
-| [`@yggizz/dsh-theme-toggle`](packages/theme-toggle) | 一键深浅色切换：桌面客户端在标题栏，浏览器在左侧栏底部 | 主题与外观 |
+| [`dsh-plugin-suite`](packages/dsh-plugin-suite) | 七个自研小功能合成一个包，设置页里逐个开关、即时生效：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换 | UI 增强 |
 | [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
-| [`@yggizz/dsh-artifact-copy`](packages/dsh-artifact-copy) | 右键文件，复制相对路径、文本内容，或文件本体（原生剪贴板文件） | UI 增强 |
-| [`@yggizz/dsh-sidebar-pins`](packages/sidebar-pins) | 记住你收起了哪些左侧栏面板入口，重启照样生效 | UI 增强 |
-| [`@yggizz/dsh-workbuddy-turn-credits`](packages/dsh-workbuddy-turn-credits) | 在每轮回复里显示这一轮实际花了多少（credits 或人民币） | 用量与计费 |
+
+早先的 `theme-toggle`、`dsh-artifact-copy`、`sidebar-pins`、`dsh-workbuddy-turn-credits` 四个独立包已并入 `dsh-plugin-suite`，从 `6da0def` 起不再单独发布（需要旧包可 `git checkout 3ffb8f7 -- packages/<名字>` 取回）。
 
 ## 插件市场
 
@@ -29,13 +28,13 @@ https://yggizz.github.io/dsh-plugins/index.json
 单装某一个（把 `#<commit>` 换成你想固定的提交，或直接用 `main`）：
 
 ```sh
-dsh plugin --profile <profile> add git+https://github.com/yggizz/dsh-plugins.git#<commit>&path:/packages/theme-toggle
+dsh plugin --profile <profile> add git+https://github.com/yggizz/dsh-plugins.git#<commit>&path:/packages/dsh-plugin-suite
 ```
 
 从本地 checkout 安装：
 
 ```sh
-dsh plugin --profile <profile> add ./packages/theme-toggle
+dsh plugin --profile <profile> add ./packages/dsh-plugin-suite
 ```
 
 `path:` 前面的 `&` 是 dsh 的写法，用来指向 monorepo 里的子目录。
@@ -43,7 +42,7 @@ dsh plugin --profile <profile> add ./packages/theme-toggle
 ## 卸载
 
 ```sh
-dsh plugin --profile <profile> remove @yggizz/dsh-theme-toggle
+dsh plugin --profile <profile> remove dsh-plugin-suite
 ```
 
 ## 要求
