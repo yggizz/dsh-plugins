@@ -248,37 +248,28 @@ window.__ModuleLoader__.load({
 /**
  * Client half of `@local/theme-toggle`.
  *
- * Two placements, picked by the environment the page runs in:
+ * One placement everywhere: the sidebar foot (`sidebar.footer.action`) — a
+ * full row while the column is wide, a centered icon once it collapses to the
+ * 56px rail, a drawer entry in drawer mode. The desktop client used to draw a
+ * second copy in the Windows caption band; 2026-11-20 the user asked for the
+ * two clients to look the same, so the caption copy is no longer drawn.
  *
- *  - Windows desktop draws a native caption band above the frame
- *    (`html[data-windows-titlebar]`, written by the Electron preload). There the
- *    button rides that band through the frame-wide `shell.overlay` seat.
- *  - Everywhere else — the browser Web UI, and macOS desktop, which has no
- *    caption band — the same button lives in the sidebar foot
- *    (`sidebar.footer.action`): a full row while the column is wide, a centered
- *    icon once it collapses to the 56px rail, a drawer entry in drawer mode. Its
- *    width and its presence follow the column instead of the window.
+ * The caption seat stays registered, and is only drawn in the states where the
+ * column renders no foot at all (a collapsed rail on desktop): the sidebar
+ * button sets `data-dsh-theme-foot` on <html> while mounted, and the caption
+ * anchor is hidden whenever that marker is present.
  *
- * The caption placement follows the sidebar instead of a frozen coordinate.
- * The caption's own left cluster moves when the sidebar opens and collapses:
- * the preload's Application/Edit menubar is anchored at
- * `--dsh-windows-menu-start` (48px expanded, 84px collapsed, because the
- * collapsed rail parks New Session in the caption at 48px), and every caption
- * plugin measures itself against that menubar. A hard-coded `left` therefore
- * lands correctly in one state and jams against the neighbours in the other, so
- * this anchor measures the live menubar box and any neighbouring caption group
- * carrying `[data-dsh-refresh-restart]` — that attribute used to be set by the
- * refresh/restart feature, which this bundle no longer ships, so the query
- * normally returns nothing and the anchor falls back to the menubar's right edge.
- * A third-party caption plugin that uses the same attribute still gets avoided.
- * It re-places itself on the same events the shell animates on: the
- * collapse/expand track transition, a window resize, a
- * click or keypress that changes the caption, and a locale change that widens
- * the menu labels.
- *
- * Both registrations are live at once and CSS keeps exactly one of them drawn
- * (`html[data-windows-titlebar]` vs `html:not([data-windows-titlebar])`), so a
- * marker that lands after this module loads cannot leave both on screen.
+ * The caption seat, when it does appear, follows the sidebar instead of a
+ * frozen coordinate: the preload's Application/Edit menubar is anchored at
+ * `--dsh-windows-menu-start` (48px expanded, 84px collapsed), so a hard-coded
+ * `left` lands correctly in one state and jams against the neighbours in the
+ * other. The anchor measures the live menubar box and any neighbouring caption
+ * group carrying `[data-dsh-refresh-restart]` (that attribute used to be set by
+ * the refresh/restart feature, which this bundle no longer ships, so the query
+ * normally returns nothing and the anchor falls back to the menubar's right
+ * edge). It re-places itself on the same events the shell animates on: the
+ * collapse/expand track transition, a window resize, a click or keypress that
+ * changes the caption, and a locale change that widens the menu labels.
  */
 
     const React = require('react');
@@ -527,6 +518,16 @@ window.__ModuleLoader__.load({
     function SidebarFootToggle(props) {
       const wide = Boolean(props && props.wide);
       const { scheme, nextId, label } = useThemeState();
+      // Marks <html> while this seat is mounted. The caption seat (Windows) is
+      // hidden by CSS whenever this attribute is present, so exactly one button
+      // is ever drawn and the placement follows whichever seat the column
+      // actually renders.
+      React.useEffect(() => {
+        const root = document.documentElement;
+        if (root === null) return undefined;
+        root.setAttribute('data-dsh-theme-foot', '');
+        return () => root.removeAttribute('data-dsh-theme-foot');
+      }, []);
       const glyph = h('span', { className: 'dsh-theme-toggle-glyph', 'aria-hidden': 'true' },
         scheme === 'dark' ? h(SunIcon) : h(MoonIcon));
       const buttonProps = {
@@ -581,12 +582,17 @@ window.__ModuleLoader__.load({
       'width:36px;height:36px;border-radius:var(--dsw-radius-md);',
       'color:var(--dsw-alias-label-primary);',
       '}',
-      // Exactly one placement is drawn. The caption button needs the band the
-      // preload marks; the sidebar row needs a column, and the Windows column has
-      // none once it collapses (its foot is hidden outright).
-      'html[data-windows-titlebar] .dsh-theme-toggle.dsh-theme-toggle-row,',
-      'html[data-windows-titlebar] .dsh-theme-toggle.dsh-theme-toggle-rail{display:none;}',
+      // One placement everywhere: the sidebar foot. The button lives at the
+      // bottom of the sidebar on every platform, so the desktop client and the
+      // browser look the same. The Windows caption seat stays registered as a
+      // fallback for the states where the column renders no foot at all
+      // (collapsed rail on desktop): the sidebar button announces itself by
+      // setting `data-dsh-theme-foot` on <html> while mounted, so the caption
+      // button is hidden exactly when the foot one exists and comes back if the
+      // foot goes away. The caption anchor is also hidden outright on any host
+      // without a caption band.
       'html:not([data-windows-titlebar]) .dsh-theme-toggle-anchor{display:none;}',
+      'html[data-dsh-theme-foot] .dsh-theme-toggle-anchor{display:none;}',
     ].join('');
 
     return {
@@ -1803,7 +1809,7 @@ function selectorFor(labels) {
             "settings.features.artifact-copy.title": "文件右键复制",
             "settings.features.artifact-copy.description": "在对话里的文件上右键，复制路径、相对路径、文件内容或文件本体。",
             "settings.features.theme-toggle.title": "深浅色切换",
-            "settings.features.theme-toggle.description": "标题栏（Windows 客户端）或侧栏底部一个按钮切换明暗主题。",
+            "settings.features.theme-toggle.description": "侧栏底部一个按钮切换明暗主题，浏览器与桌面客户端一致。",
             "settings.features.turn-credits.title": "每轮花费",
             "settings.features.turn-credits.description": "在每条回复的操作行显示这一轮实际花掉的积分或人民币。",
             "settings.features.hide-branch.title": "隐藏「分支到新会话」",
@@ -1827,7 +1833,7 @@ function selectorFor(labels) {
             "settings.features.artifact-copy.title": "File right-click copy",
             "settings.features.artifact-copy.description": "Right-click a file in the conversation to copy its path, relative path, contents, or the file itself.",
             "settings.features.theme-toggle.title": "Theme toggle",
-            "settings.features.theme-toggle.description": "One button in the window caption (Windows) or at the sidebar foot switches light and dark.",
+            "settings.features.theme-toggle.description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client.",
             "settings.features.turn-credits.title": "Per-turn spend",
             "settings.features.turn-credits.description": "Shows what each completed turn cost, in credits or CNY, on that reply's action row.",
             "settings.features.hide-branch.title": "Hide \"branch into a new conversation\"",

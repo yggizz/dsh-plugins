@@ -20,7 +20,7 @@
       },
       "theme-toggle": {
         "title": "深浅色切换",
-        "description": "标题栏（Windows 客户端）或侧栏底部一个按钮切换明暗主题。"
+        "description": "侧栏底部一个按钮切换明暗主题，浏览器与桌面客户端一致。"
       },
       "turn-credits": {
         "title": "每轮花费",

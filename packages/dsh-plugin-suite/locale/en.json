@@ -20,7 +20,7 @@
       },
       "theme-toggle": {
         "title": "Theme toggle",
-        "description": "One button in the window caption (Windows) or at the sidebar foot switches light and dark."
+        "description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client."
       },
       "turn-credits": {
         "title": "Per-turn spend",
