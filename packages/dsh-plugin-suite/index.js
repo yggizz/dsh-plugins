@@ -17,8 +17,14 @@
  *
  * The other features are Client-only; `client.js` mounts and unmounts them.
  *
- * Route security is the same rule the shipped connector routes use: only a
- * loopback Host header is answered, so a LAN origin cannot drive the document.
+ * Route security: a request is answered when it is loopback (the desktop client)
+ * **or** when DSH's own browser-trust fence admits it — `ctx.connection
+ * .requestRejection()`, the same check every `/api` call passes, which knows
+ * about the listener's bind address and each `--trusted-host`. The second arm
+ * exists because a Docker port mapping breaks the first: the browser sends
+ * `Host: 192.168.0.103:3080` while the socket's `localAddress` is the container
+ * bridge (`172.19.0.2`), so a loopback-only rule rejects every switch save on a
+ * containerised deployment with `403 host-not-trusted`.
  */
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -89,6 +95,29 @@ function hostIsLocal(request) {
   if (/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(bare)) return true
   const local = request.socket?.localAddress
   return typeof local === 'string' && local !== '' && (local === bare || `[${local}]` === hostname)
+}
+
+/**
+ * Whether DSH's browser-trust fence admits this request.
+ *
+ * `ctx.connection` may be absent (a profile without the Web app, or a harness),
+ * in which case only the loopback arm applies. When it is present the fence must
+ * answer `undefined` — the request is both trusted and authenticated, exactly
+ * what `/api` requires — so a LAN origin still cannot drive the document.
+ * @param ctx - the plugin's Cordis context.
+ * @returns a predicate over an incoming request.
+ */
+function createTrust(ctx) {
+  return (request) => {
+    if (hostIsLocal(request)) return true
+    const connection = typeof ctx.get === 'function' ? ctx.get('connection') : undefined
+    if (connection === undefined || typeof connection.requestRejection !== 'function') return false
+    try {
+      return connection.requestRejection(request) === undefined
+    } catch {
+      return false
+    }
+  }
 }
 
 /** Read a bounded JSON body. */
@@ -230,6 +259,61 @@ function createSwitches() {
 /* ------------------------------------------------------------- the plugin ---- */
 
 /**
+ * Present a request whose socket address already matches its Host header.
+ *
+ * The two Host halves in `features/host/*.js` are kept byte-identical to their
+ * standalone originals, and their own guard only accepts a loopback Host or a
+ * Host equal to `request.socket.localAddress`. On a containerised deployment
+ * behind a port mapping those never match (browser sends `192.168.0.103:3080`,
+ * socket says `172.19.0.2`), so the guard would 403 even though DSH's fence
+ * admits the request. Rather than fork the verbatim bodies, the wrapper hands
+ * them a request view whose socket reports the hostname they are looking for —
+ * and only when the fence has already admitted the request.
+ * @param request - the incoming request.
+ * @returns the request, or a view with a matching `socket.localAddress`.
+ */
+function admitView(request) {
+  const host = request.headers?.host
+  if (typeof host !== 'string' || host.trim() === '') return request
+  let hostname
+  try {
+    hostname = new URL(`http://${host}`).hostname
+  } catch {
+    return request
+  }
+  const bare = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
+  return new Proxy(request, {
+    get(target, key, receiver) {
+      if (key !== 'socket') return Reflect.get(target, key, receiver)
+      const socket = target.socket
+      if (socket === undefined || socket === null) return socket
+      return new Proxy(socket, {
+        get(socketTarget, socketKey, socketReceiver) {
+          if (socketKey === 'localAddress') return bare
+          const value = Reflect.get(socketTarget, socketKey, socketReceiver)
+          return typeof value === 'function' ? value.bind(socketTarget) : value
+        },
+      })
+    },
+  })
+}
+
+/**
+ * Wrap one route so its handler sees an admitted request view.
+ * @param route - the route a Host feature asked to register.
+ * @param trusted - the suite's trust predicate.
+ * @returns the route, with its handler wrapped.
+ */
+function trustRoute(route, trusted) {
+  if (route === null || typeof route !== 'object' || typeof route.handler !== 'function') return route
+  const handler = route.handler
+  return {
+    ...route,
+    handler: (request, response) => handler(trusted(request) ? admitView(request) : request, response),
+  }
+}
+
+/**
  * Wrap a feature context so a route that is already taken does not abort the
  * feature, and is retried until it becomes free.
  *
@@ -247,9 +331,10 @@ function createSwitches() {
  * standalone bundles were switched off.
  * @param {object} ctx - the feature's child context.
  * @param {Set<object>} pending - routes this feature still wants to register.
+ * @param {(request: object) => boolean} trusted - the suite's trust predicate.
  * @returns {object} the same context, with a duplicate-tolerant web server.
  */
-function tolerantCtx(ctx, pending) {
+function tolerantCtx(ctx, pending, trusted) {
   /** Wrap one web server so `register` retries instead of throwing for a taken path. */
   const wrapWebServer = (server) => {
     if (server === undefined || server === null || typeof server.register !== 'function') return server
@@ -258,7 +343,7 @@ function tolerantCtx(ctx, pending) {
         if (key !== 'register') return Reflect.get(target, key, receiver)
         return (route) => {
           try {
-            return target.register(route)
+            return target.register(trustRoute(route, trusted))
           } catch (error) {
             console.warn('[plugin-suite] route already served elsewhere, will retry:', route?.path, '—',
               error instanceof Error ? error.message : String(error))
@@ -272,7 +357,7 @@ function tolerantCtx(ctx, pending) {
   return new Proxy(ctx, {
     get(target, key, receiver) {
       if (key === 'inject') {
-        return (deps, callback) => target.inject(deps, inner => callback(tolerantCtx(inner, pending)))
+        return (deps, callback) => target.inject(deps, inner => callback(tolerantCtx(inner, pending, trusted)))
       }
       const value = Reflect.get(target, key, receiver)
       if (key === 'webServer') return wrapWebServer(value)
@@ -287,6 +372,8 @@ function tolerantCtx(ctx, pending) {
  */
 export function apply(ctx) {
   const switches = createSwitches()
+  /** The trust predicate every route of this plugin uses. */
+  const trusted = createTrust(ctx)
   /** feature id → the fiber its Host half runs on. */
   const mounted = new Map()
   /**
@@ -324,7 +411,7 @@ export function apply(ctx) {
       if (server === undefined || typeof server.register !== 'function') continue
       for (const route of [...routes]) {
         try {
-          const off = server.register(route)
+          const off = server.register(trustRoute(route, trusted))
           // The feature's own fiber must own this disposer, so it leaves with it.
           fiber.ctx?.effect?.(() => off)
           routes.delete(route)
@@ -346,7 +433,7 @@ export function apply(ctx) {
     if (body === undefined || mounted.has(id)) return
     const pending = new Set()
     try {
-      const fiber = ctx.plugin({ inject: [], apply: featureCtx => body(tolerantCtx(featureCtx, pending)) })
+      const fiber = ctx.plugin({ inject: [], apply: featureCtx => body(tolerantCtx(featureCtx, pending, trusted)) })
       mounted.set(id, fiber)
       failures.delete(id)
       if (pending.size > 0) pendingRoutes.set(id, pending)
@@ -406,7 +493,7 @@ export function apply(ctx) {
       kind: 'exact',
       path: '/plugins/plugin-suite/state',
       handler: async (request, response) => {
-        if (!hostIsLocal(request)) return sendJson(response, 403, { ok: false, error: 'host-not-trusted' })
+        if (!trusted(request)) return sendJson(response, 403, { ok: false, error: 'host-not-trusted' })
         if (request.method === 'GET') {
           await switches.load()
           return sendJson(response, 200, { ok: true, version: STATE_VERSION, features: { ...switches.data.features } })

@@ -33,9 +33,28 @@
 }
 ```
 
-Host 通过 `/plugins/plugin-suite/state` 提供读写（GET 读、POST 写单个或 `{ "all": true|false }` 写全部），
-只应答 loopback Host 头。浏览器侧另存一份 localStorage 镜像（`dsh.plugin-suite.v1`），
+Host 通过 `/plugins/plugin-suite/state` 提供读写（GET 读、POST 写单个或 `{ "all": true|false }` 写全部）。
+浏览器侧另存一份 localStorage 镜像（`dsh.plugin-suite.v1`），
 只为刷新后的第一帧不闪；权威永远是上面那个文件。
+
+### 路由信任口径（1.1.3 起）
+
+两条通路都算可信：
+
+1. **回环 Host**——桌面客户端从 `127.0.0.1:xxxxx` 打开时走这条；
+2. **DSH 自己的浏览器信任栅栏**——`ctx.connection.requestRejection(request)` 返回 `undefined`
+   才放行，和每个 `/api` 调用过的是同一道检查，因此监听绑定 IP 与 `--trusted-host`
+   都算数。
+
+第二条是为 Docker 部署加的：端口映射之后浏览器发的是 `Host: 192.168.0.103:3080`，
+而 socket 的 `localAddress` 是容器网桥（如 `172.19.0.2`），两者永不相等，
+旧版「只认回环」的规则会把每次开关保存都拒成 `403 host-not-trusted`，
+设置页于是只能读到 localStorage 镜像、点开关没反应。
+
+`features/host/*.js` 两个文件仍然逐字节保留原样，它们自带的回环守卫由 `index.js`
+包一层：栅栏已放行的请求会拿到一份 `socket.localAddress` 等于 Host 主机名的请求视图，
+被拒的请求保持原样交给它们自己拒。
+
 
 ## 开关为什么是真的卸载
 
@@ -61,6 +80,8 @@ dsh-plugin-suite/
 │   └── host/*.js            # 两个原始 host 源文件，逐字节保留
 ├── scripts/build.mjs        # 把 raw 拼成 client.js
 ├── scripts/harness.mjs      # 假 ctx 断言：挂载/卸载无泄漏
+├── scripts/host-harness.mjs # 假 ctx 断言：被占住的路由会被接管
+├── scripts/trust-harness.mjs# 假 req/res 断言：回环 + 信任栅栏两条通路
 ├── locale/{zh,en}.json
 ├── icon.svg
 └── cordis.patch.yml
@@ -80,6 +101,7 @@ $node = 'C:\Users\11919\.dsh\dsh-runtimes\dsh-next-primary-runtime\dependencies\
 & $node scripts\host-harness.mjs
 & $node scripts\archive-harness.mjs
 & $node scripts\pins-harness.mjs
+& $node scripts\trust-harness.mjs
 ```
 
 ## 自测结果（假 ctx + 假 module loader + 假 req/res）
@@ -94,6 +116,7 @@ PASS: mount/unmount clean over 3 rounds, all-off leaves nothing, all-on restores
 host-harness: PASS 被 standalone 插件占住的路由在它关闭后被接管，无需重启
 archive-harness: 19/19 checks passed
 pins-harness: 9/9 checks
+trust-harness: 18/18 trust checks（回环放行、栅栏放行/拒绝/401、包过的原样守卫）
 ```
 
 ## 与旧插件的并存
