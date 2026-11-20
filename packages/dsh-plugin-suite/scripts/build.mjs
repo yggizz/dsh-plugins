@@ -1,4 +1,4 @@
-// Build `client.js` for dsh-plugin-suite from the six raw client sources.
+// Build `client.js` for dsh-plugin-suite from the seven raw client sources.
 //
 // Each raw file is the original `window.__ModuleLoader__.load({ id, factory })`
 // wrapper. This script keeps the factory BODY verbatim (zero edits) and turns it
@@ -16,7 +16,6 @@ const localeDir = path.join(here, '..', 'locale')
 const FEATURES = [
   ['artifact-copy'],
   ['theme-toggle'],
-  ['refresh-restart'],
   ['turn-credits'],
   ['hide-branch'],
   ['sidebar-pins'],
@@ -93,7 +92,7 @@ ${preamble === '' ? '' : `${preamble}\n\n`}${body}
 const header = `/**
  * dsh-plugin-suite 鈥?Client half.
  *
- * Six independent small features in ONE bundle, each mountable and removable at
+ * Seven independent small features in ONE bundle, each mountable and removable at
  * runtime, plus the Settings page that switches them.
  *
  * Every feature keeps its original factory body verbatim (see
@@ -131,7 +130,7 @@ ${FEATURES.map(([name]) => `      { id: ${JSON.stringify(name)}, plugin: ${ident
 
     /** localStorage mirror key; the Host document remains authoritative. */
     const MIRROR_KEY = 'dsh.plugin-suite.v1'
-    /** The six switchable features, by id, in page order. */
+    /** The seven switchable features, by id, in page order. */
     const FEATURE_IDS = FEATURES.map(feature => feature.id)
     /** Settings page identity. */
     const SETTINGS_NS = 'plugin-suite'

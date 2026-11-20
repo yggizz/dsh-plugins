@@ -19,9 +19,13 @@
  * collapsed rail parks New Session in the caption at 48px), and every caption
  * plugin measures itself against that menubar. A hard-coded `left` therefore
  * lands correctly in one state and jams against the neighbours in the other, so
- * this anchor measures the live menubar box and the neighbouring caption group
- * (`[data-dsh-refresh-restart]`) and re-places itself on the same events the
- * shell animates on: the collapse/expand track transition, a window resize, a
+ * this anchor measures the live menubar box and any neighbouring caption group
+ * carrying `[data-dsh-refresh-restart]` — that attribute used to be set by the
+ * refresh/restart feature, which this bundle no longer ships, so the query
+ * normally returns nothing and the anchor falls back to the menubar's right edge.
+ * A third-party caption plugin that uses the same attribute still gets avoided.
+ * It re-places itself on the same events the shell animates on: the
+ * collapse/expand track transition, a window resize, a
  * click or keypress that changes the caption, and a locale change that widens
  * the menu labels.
  *
