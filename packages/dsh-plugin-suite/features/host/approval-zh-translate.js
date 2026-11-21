@@ -174,7 +174,14 @@ async function translatePass(text, machine, style) {
     return null
   })
   if (jobs.length > 0 && machine !== null) {
-    const lines = await machine(jobs.map((index) => parts[index]).join('\n'))
+    let lines
+    try {
+      lines = await machine(jobs.map((index) => parts[index]).join('\n'))
+    } catch {
+      // A provider failure must not abort the whole headline: the next
+      // provider (or the other placeholder dialect) gets a chance.
+      return { text, changed: false, ok: false }
+    }
     const translated = String(lines).split('\n')
     if (translated.length === jobs.length && translated.every((line) => line.trim() !== '')) {
       jobs.forEach((index, order) => { results[index] = translated[order] })
