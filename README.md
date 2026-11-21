@@ -8,7 +8,7 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 
 | 包 | 做什么 | 分类 |
 |---|---|---|
-| [`dsh-plugin-suite`](packages/dsh-plugin-suite) | 七个自研小功能合成一个包，设置页里逐个开关、即时生效：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换 | UI 增强 |
+| [`dsh-plugin-suite`](packages/dsh-plugin-suite) | 九个自研小功能合成一个包，设置页里逐个开关、即时生效：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换、审批界面中文、侧栏重启按钮 | UI 增强 |
 | [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
 | [`dsh-restart-button`](packages/dsh-restart-button) | 侧栏底部一个「重启」按钮，点两下真正重启这个 DSH 容器（OpenCLI `docker restart`，未配 token 时用进程退出 + 容器重启策略），页面自动刷新 | UI 增强 |
 | [`dsh-approval-zh`](packages/dsh-approval-zh) | 审批卡标题显示中文：DSH 自带措辞离线词典翻译，剩余英文交给 Host 翻译服务，工具名/路径/JSON/命令与沙箱模式保留原文；跟随界面语言，翻译失败保留原文，不影响审批决策 | UI 增强 |
