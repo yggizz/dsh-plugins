@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-suite",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "description": "Nine small DeepSeek Harness plugins in one bundle — file right-click copy, theme toggle, per-turn spend, hidden branch button, remembered sidebar pins, right sidebar open by default, one-click archive filter, Chinese approval cards and a sidebar restart button — each with its own switch on a Settings page.",
   "license": "MIT",

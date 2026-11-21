@@ -114,7 +114,8 @@ export function apply(ctx) {
     return list
   }
 
-  ctx.effect(() => ctx.webServer.register({
+  ctx.inject(['webServer'], webCtx => {
+  ctx.effect(() => webCtx.webServer.register({
     kind: 'exact',
     path: STATUS_ROUTE,
     handler: (request, response) => {
@@ -132,7 +133,7 @@ export function apply(ctx) {
     },
   }), 'plugin-suite: approval-zh status route')
 
-  ctx.effect(() => ctx.webServer.register({
+  ctx.effect(() => webCtx.webServer.register({
     kind: 'exact',
     path: ROUTE,
     handler: async (request, response) => {
@@ -191,4 +192,5 @@ export function apply(ctx) {
       }
     },
   }), 'plugin-suite: approval-zh translate route')
+  })
 }

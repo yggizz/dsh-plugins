@@ -81,7 +81,8 @@ function readJsonBody(request) {
 export function apply(ctx) {
   const state = { restarting: false, requestedAt: 0 }
 
-  ctx.effect(() => ctx.webServer.register({
+  ctx.inject(['webServer'], webCtx => {
+  ctx.effect(() => webCtx.webServer.register({
     kind: 'exact',
     path: STATUS_PATH,
     handler: (request, response) => {
@@ -103,7 +104,7 @@ export function apply(ctx) {
     },
   }), 'plugin-suite: restart status route')
 
-  ctx.effect(() => ctx.webServer.register({
+  ctx.effect(() => webCtx.webServer.register({
     kind: 'exact',
     path: RESTART_PATH,
     handler: async (request, response) => {
@@ -147,4 +148,5 @@ export function apply(ctx) {
       setTimeout(() => process.exit(0), EXIT_DELAY_MS)
     },
   }), 'plugin-suite: restart route')
+  })
 }
