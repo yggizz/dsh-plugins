@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Restart button",
+    "description": "Adds a restart control beside Settings in the sidebar footer. One click arms it and the second restarts this Harness container, so every session in this container stops and comes back. When the OpenCLI gateway is configured the Host asks Docker to restart the container directly; otherwise it ends its own process and the container's restart policy brings it back. The page reloads itself once the new process answers. Off: no button and no routes."
+  }
+}
