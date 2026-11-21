@@ -5,8 +5,8 @@
     "zh": "yggizz DSH 插件"
   },
   "description": {
-    "en": "Small, dependency-free DeepSeek Harness plugins: a seven-feature suite with per-feature switches, and a profile pack/restore panel.",
-    "zh": "一组无依赖的小插件：一个带逐项开关的七合一插件套件，以及 profile 打包迁移面板。"
+    "en": "Small, dependency-free DeepSeek Harness plugins: a seven-feature suite with per-feature switches, a profile pack/restore panel, and a sidebar restart control.",
+    "zh": "一组无依赖的小插件：一个带逐项开关的七合一插件套件、一个 profile 打包迁移面板，以及一个侧栏重启按钮。"
   },
   "metadata": {
     "categories": {
@@ -129,6 +129,42 @@
             "url": "https://github.com/yggizz/dsh-plugins",
             "commit": "4e04fdc02507175973b09ffbb804c14ca927d44b",
             "path": "packages/dsh-sync-panel"
+          },
+          "engines": {
+            "dsh": ">=0.2.1-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-restart-button",
+      "title": {
+        "en": "Restart button",
+        "zh": "重启按钮"
+      },
+      "description": {
+        "en": "Adds a restart control beside Settings in the sidebar footer. One click arms it and the second restarts this Harness container, so every session in this container stops and comes back. When the OpenCLI gateway is configured the Host asks Docker to restart the container directly; otherwise it ends its own process and the container's restart policy brings it back. The page reloads itself once the new process answers. Off: no button and no routes.",
+        "zh": "在左侧栏底部、设置按钮旁边加一个重启按钮。第一次点击进入待确认，第二次点击真正重启这个 DSH 容器，容器里的所有会话都会中断并重新拉起。配置了 OpenCLI 网关时，Host 直接请求 Docker 重启容器；否则结束自身进程，由容器的重启策略把它拉起来。新进程应答后页面自动刷新。关闭插件后按钮与接口一并消失。"
+      },
+      "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/2b0e90285b6e5b91932bcefac14bf248300f91d7/packages/dsh-restart-button/icon.svg",
+      "author": "yggizz",
+      "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-restart-button#readme",
+      "repository": {
+        "url": "https://github.com/yggizz/dsh-plugins",
+        "directory": "packages/dsh-restart-button"
+      },
+      "metadata": {
+        "category": "ui"
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1795295943,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/yggizz/dsh-plugins",
+            "commit": "2b0e90285b6e5b91932bcefac14bf248300f91d7",
+            "path": "packages/dsh-restart-button"
           },
           "engines": {
             "dsh": ">=0.2.1-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"

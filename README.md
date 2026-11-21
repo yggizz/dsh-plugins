@@ -10,6 +10,7 @@ DeepSeek Harness（`dsh`）插件合集。每个目录是一个可独立安装�
 |---|---|---|
 | [`dsh-plugin-suite`](packages/dsh-plugin-suite) | 七个自研小功能合成一个包，设置页里逐个开关、即时生效：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换 | UI 增强 |
 | [`@yggizz/dsh-sync-panel`](packages/dsh-sync-panel) | 设置页里一键打包/还原插件与 profile 配置，用于换电脑迁移 | 开发与运行时 |
+| [`dsh-restart-button`](packages/dsh-restart-button) | 侧栏底部一个「重启」按钮，点两下真正重启这个 DSH 容器（OpenCLI `docker restart`，未配 token 时用进程退出 + 容器重启策略），页面自动刷新 | UI 增强 |
 
 早先的 `theme-toggle`、`dsh-artifact-copy`、`sidebar-pins`、`dsh-workbuddy-turn-credits` 四个独立包已并入 `dsh-plugin-suite`，从 `6da0def` 起不再单独发布（需要旧包可 `git checkout 3ffb8f7 -- packages/<名字>` 取回）。
 
