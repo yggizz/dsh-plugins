@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Chinese approval cards",
+    "description": "Reads the approval card headline in Chinese: DSH's fixed wording is translated offline and leftover English prose goes through the built-in translator, while tool names, paths, commands and key values stay verbatim."
+  }
+}

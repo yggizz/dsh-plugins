@@ -1,0 +1,64 @@
+{
+  "name": "dsh-approval-zh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read the approval card in Chinese: DSH's fixed wording is translated offline and leftover English prose goes through the built-in translator, while tool names, paths, commands and key values stay verbatim.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "translate.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-approval"
+      ]
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/schemastery": {
+      "optional": true
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "^3.18.0"
+  },
+  "icon": "icon.svg",
+  "author": "yggizz",
+  "license": "MIT",
+  "homepage": "https://github.com/yggizz/dsh-plugins/tree/main/packages/dsh-approval-zh#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yggizz/dsh-plugins.git",
+    "directory": "packages/dsh-approval-zh"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "approval",
+    "translation",
+    "chinese"
+  ]
+}
