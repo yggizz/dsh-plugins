@@ -1,8 +1,8 @@
 # 小插件套件（dsh-plugin-suite）
 
-把七个自研小功能装进一个插件包，并在「设置 → 小插件」里逐个开关。开关即时生效，不需要重启。
+把九个自研小功能装进一个插件包，并在「设置 → 小插件」里逐个开关。开关即时生效，不需要重启。
 
-## 七个功能
+## 九个功能
 
 | 功能 | 做什么 | 关掉之后 |
 |---|---|---|
@@ -13,6 +13,8 @@
 | 记住取消固定的面板 | 重启后仍保持你取消固定的侧栏面板 | 重启后全部回到固定状态 |
 | 右侧栏默认展开 | 会话出现时自动展开右栏（窄于 768px 不展开） | 新会话恢复默认收起 |
 | 归档筛选一键切换 | 「工作区」标题行搜索图标左侧一个按钮，一键在「隐藏已归档」和「仅显示已归档」间切换 | 按钮消失，归档筛选回到内置菜单 |
+| 审批界面中文 | 审批卡标题显示中文：DSH 自带措辞离线词典翻译，剩余英文走内置翻译服务，工具名 / 路径 / JSON / 沙箱模式保留原文；跟随界面语言，翻译失败保留原文 | 卡片回到原样（官方英文/中文模板），翻译与状态路由同时卸载 |
+| 重启按钮 | 侧栏底部一个按钮，点两下结束 Host 进程、由容器重启策略拉回，页面自动刷新 | 按钮消失，两条路由同时卸载 |
 
 ## 开关存在哪
 
@@ -28,7 +30,9 @@
     "hide-branch": true,
     "sidebar-pins": true,
     "rightbar-default-open": true,
-    "archive-filter-toggle": true
+    "archive-filter-toggle": true,
+    "approval-zh": true,
+    "restart-button": true
   }
 }
 ```
@@ -51,7 +55,7 @@ Host 通过 `/plugins/plugin-suite/state` 提供读写（GET 读、POST 写单�
 旧版「只认回环」的规则会把每次开关保存都拒成 `403 host-not-trusted`，
 设置页于是只能读到 localStorage 镜像、点开关没反应。
 
-`features/host/*.js` 两个文件仍然逐字节保留原样，它们自带的回环守卫由 `index.js`
+`features/host/*.js` 仍然保留原有守卫（新增的 `approval-zh.js` / `restart-button.js` 直接按套件的信任口径写），它们自带的回环守卫由 `index.js`
 包一层：栅栏已放行的请求会拿到一份 `socket.localAddress` 等于 Host 主机名的请求视图，
 被拒的请求保持原样交给它们自己拒。
 
@@ -73,11 +77,11 @@ fiber.dispose()                                            →  该功能注册�
 
 ```
 dsh-plugin-suite/
-├── index.js                 # Host 半边：开关文件 + /state 路由 + 两个 Host 功能
+├── index.js                 # Host 半边：开关文件 + /state 路由 + 四个 Host 功能
 ├── client.js                # 构建产物（勿手改）
 ├── features/
-│   ├── client/*.raw.js      # 七个原始 client 源文件，逐字节保留
-│   └── host/*.js            # 两个原始 host 源文件，逐字节保留
+│   ├── client/*.raw.js      # 九个原始 client 源文件，逐字节保留
+│   └── host/*.js            # 四个 host 源文件（两个逐字节保留 + 两个套件内实现）
 ├── scripts/build.mjs        # 把 raw 拼成 client.js
 ├── scripts/harness.mjs      # 假 ctx 断言：挂载/卸载无泄漏
 ├── scripts/host-harness.mjs # 假 ctx 断言：被占住的路由会被接管
@@ -89,7 +93,7 @@ dsh-plugin-suite/
 
 `client.js` 由 `scripts/build.mjs` 生成：它剥掉每个 raw 文件的
 `window.__ModuleLoader__.load({ id, factory })` 外壳，把 **factory 主体逐字**放进一个
-`(function (require) { … })(require)` IIFE，因此七个功能的代码零改动。
+`(function (require) { … })(require)` IIFE，因此九个功能的代码零改动。
 
 重新构建：
 
@@ -107,16 +111,16 @@ $node = 'C:\Users\11919\.dsh\dsh-runtimes\dsh-next-primary-runtime\dependencies\
 ## 自测结果（假 ctx + 假 module loader + 假 req/res）
 
 ```
-after apply   effects=11 slots=5 styles=4 menus=1 fibers=7
-round 1/2/3   off: effects=10 slots=4   on: effects=11 slots=5     ← 三轮无漂移
+after apply   effects=13 slots=7 styles=5 menus=1 fibers=9
+round 1/2/3   off: effects=12 slots=6   on: effects=13 slots=7     ← 三轮无漂移
 all off       mounted=0 slots=1（只剩设置页本身）menus=0
-all on        mounted=7 slots=5 effects=11
+all on        mounted=9 slots=7 effects=13
 PASS: mount/unmount clean over 3 rounds, all-off leaves nothing, all-on restores
 
 host-harness: PASS 被 standalone 插件占住的路由在它关闭后被接管，无需重启
 archive-harness: 19/19 checks passed
 pins-harness: 9/9 checks
-trust-harness: 18/18 trust checks（回环放行、栅栏放行/拒绝/401、包过的原样守卫）
+trust-harness: 28/28 trust checks（回环放行、栅栏放行/拒绝/401、包过的原样守卫）
 ```
 
 ## 与旧插件的并存

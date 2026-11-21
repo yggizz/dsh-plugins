@@ -3,7 +3,7 @@
 // unmounts, and leaves nothing behind.
 //
 // What it proves:
-//   1. all six features mount on their own fiber when enabled;
+//   1. all nine features mount on their own fiber when enabled;
 //   2. the settings page registers on `settings.section` under id `plugin-suite`;
 //   3. flipping a switch off disposes exactly one fiber and every disposable
 //      that fiber owned goes to zero;
@@ -117,7 +117,7 @@ globalThis.window = {
 }
 globalThis.document = {
   head: { appendChild(node) { live.styles += 1; node.__attached = true } },
-  createElement: () => ({ setAttribute() {}, remove() { live.styles -= 1 } }),
+  createElement: () => ({ dataset: {}, style: {}, setAttribute() {}, remove() { live.styles -= 1 } }),
   querySelector: () => null,
   querySelectorAll: () => [],
   addEventListener: () => {},

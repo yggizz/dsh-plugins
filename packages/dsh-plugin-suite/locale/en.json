@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Plugin suite",
-    "description": "Seven small local features in one bundle: file right-click copy, light/dark toggle, per-turn spend, hidden branch button, remembered unpinned panels, right sidebar open by default, one-click archive filter. Each has its own switch under Settings → Plugin suite, applied immediately. The configuration lives in ~/.dsh/plugin-suite.json."
+    "description": "Nine small local features in one bundle: file right-click copy, light/dark toggle, per-turn spend, hidden branch button, remembered unpinned panels, right sidebar open by default, one-click archive filter. Each has its own switch under Settings → Plugin suite, applied immediately. The configuration lives in ~/.dsh/plugin-suite.json."
   },
   "settings": {
     "title": "Plugin suite",
     "nav": "Plugin suite",
-    "subtitle": "Manage the seven independent features. Changes apply immediately.",
+    "subtitle": "Manage the nine independent features. Changes apply immediately.",
     "enableAll": "Enable all",
     "disableAll": "Disable all",
     "saved": "Configuration saved in",
@@ -41,6 +41,14 @@
       "archive-filter-toggle": {
         "title": "One-click archive filter",
         "description": "Adds a button left of the search icon in the sidebar's Workspace header: one click flips between \"hide archived\" and \"archived only\". The glyph follows the state and a short notice confirms the switch."
+      },
+      "approval-zh": {
+        "title": "Chinese approval cards",
+        "description": "Shows the approval card headline in Chinese: DSH's own escalation and auto-review wording comes from an offline dictionary, leftover English prose goes through the built-in translator, and tool names, paths, JSON, commands and sandbox modes stay verbatim. Follows the UI language; a failed translation keeps the original text and never changes a decision."
+      },
+      "restart-button": {
+        "title": "Restart button",
+        "description": "One control at the bottom of the sidebar: the first click arms it, the second ends the Host process and the container restart policy brings DSH back; the page reloads itself. Every session in this container is interrupted."
       }
     }
   }

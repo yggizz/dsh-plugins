@@ -1,7 +1,7 @@
 /**
  * dsh-plugin-suite 鈥?Client half.
  *
- * Seven independent small features in ONE bundle, each mountable and removable at
+ * Nine independent small features in ONE bundle, each mountable and removable at
  * runtime, plus the Settings page that switches them.
  *
  * Every feature keeps its original factory body verbatim (see
@@ -1783,6 +1783,432 @@ function selectorFor(labels) {
     }
     })(require)
 
+    /* ========================= approval-zh ========================= */
+    // Verbatim from features/client/approval-zh.raw.js (module preamble + factory body).
+    const approvalZh = (function (require) {
+/**
+ * dsh-approval-zh — browser half.
+ *
+ * Takes over the composer chain for one pending tool approval (priority 0.5:
+ * after the question composers, before the shipped approval panel at 1) and
+ * renders the SAME shared approval card, only with a Chinese headline.
+ *
+ * The headline arrives as `displayReason`/`reason` from the requester; DSH's
+ * own escalation prose is partly English. The Host half owns the translation;
+ * this half asks it only when the active UI language is Chinese and the
+ * headline still carries English, then swaps the text in place. Every failure
+ * keeps the original headline, so the approval stays answerable.
+ */
+
+    const React = require('react')
+
+    const ROUTE = '/api/dsh-approval-zh/translate'
+    const STORAGE_PREFIX = 'dsh-approval-zh:v1:'
+
+    function isChinese(locale) {
+      if (typeof locale !== 'string') return false
+      const lower = locale.toLowerCase()
+      return lower === 'zh' || lower.startsWith('zh-') || lower.startsWith('zh_')
+    }
+
+    function hasEnglish(text) {
+      return /[A-Za-z]{2,}/.test(text)
+    }
+
+    /** Stable per-headline key for the session cache (FNV-1a). */
+    function fingerprint(text) {
+      let value = 2166136261
+      for (let index = 0; index < text.length; index += 1) {
+        value ^= text.charCodeAt(index)
+        value = Math.imul(value, 16777619)
+      }
+      return (value >>> 0).toString(36) + ':' + text.length
+    }
+
+    function readStored(key) {
+      try { return window.sessionStorage.getItem(key) } catch { return null }
+    }
+
+    function writeStored(key, value) {
+      try { window.sessionStorage.setItem(key, value) } catch { /* storage is best-effort */ }
+    }
+
+    return {
+      inject: ['slots', 'locale'],
+      apply(ctx) {
+        const approvalT = ctx.locale.bind('approval')
+        const inFlight = new Map()
+
+        const translate = (text) => {
+          const known = inFlight.get(text)
+          if (known !== undefined) return known
+          const key = STORAGE_PREFIX + fingerprint(text)
+          const stored = readStored(key)
+          if (stored !== null && stored !== '') {
+            const done = Promise.resolve(stored)
+            inFlight.set(text, done)
+            return done
+          }
+          const work = fetch(ROUTE, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ text }),
+            cache: 'no-store',
+          })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((payload) => (payload && payload.ok === true && typeof payload.text === 'string'
+              && payload.changed === true && payload.text.trim() !== '' ? payload.text : text))
+            .catch(() => text)
+            .then((out) => {
+              if (out !== text) writeStored(key, out)
+              return out
+            })
+          inFlight.set(text, work)
+          return work
+        }
+
+        const activeLocale = () => ctx.locale.getLocale().active
+
+        /** Exactly the shipped panel's headline, before any translation. */
+        function headline(approval) {
+          if (approval.displayReason !== undefined) {
+            if (typeof ctx.locale.resolveText === 'function') {
+              try { return String(ctx.locale.resolveText(approval.displayReason)) } catch { /* fall through */ }
+            }
+            return String(approval.displayReason[activeLocale()] ?? approval.displayReason.en ?? '')
+          }
+          return approval.reason ?? approvalT('escalation', { toolName: approval.toolName })
+        }
+
+        function ApprovalZhPanel(props) {
+          const approval = props.matched
+          const [locale, setLocale] = React.useState(activeLocale)
+          React.useEffect(() => ctx.locale.subscribe(() => setLocale(activeLocale())), [])
+
+          const base = headline(approval)
+          const chinese = isChinese(locale)
+          const [title, setTitle] = React.useState(base)
+
+          React.useEffect(() => {
+            setTitle(base)
+            if (!chinese || !hasEnglish(base)) return undefined
+            let cancelled = false
+            translate(base).then((out) => {
+              if (!cancelled && typeof out === 'string' && out.trim() !== '') setTitle(out)
+            }).catch(() => { /* the original headline stays */ })
+            return () => { cancelled = true }
+          }, [base, chinese])
+
+          return props.renderFactorySlot('conversation.approval.card', {
+            requestKey: approval.key,
+            title,
+            ...(approval.callId === undefined ? {} : { callId: approval.callId }),
+            canAnswer: () => approval.answerable,
+            onAllow: () => approval.answer('allowed-once'),
+            onReject: () => approval.answer('rejected'),
+          })
+        }
+
+        ctx.slots.inject('conversation.composer', () => ctx.slots.register({
+          name: 'conversation.composer',
+          id: 'dsh-approval-zh',
+          priority: 0.5,
+          select: (owner) => (owner && owner.pendingInteraction && owner.pendingInteraction.kind === 'approval'
+            ? owner.pendingInteraction
+            : null),
+        }, ApprovalZhPanel))
+      },
+    }
+    })(require)
+
+    /* ========================= restart-button ========================= */
+    // Verbatim from features/client/restart-button.raw.js (module preamble + factory body).
+    const restartButton = (function (require) {
+/**
+ * dsh-restart-button — browser half.
+ *
+ * One control in the sidebar footer, drawn like the neighbouring footer actions
+ * in this deployment: a full row with a visible label while the column is wide,
+ * a centred 36px icon once it collapses to the rail.
+ *
+ *   click 1  arms the control for CONFIRM_MS
+ *   click 2  asks the Host to restart the container, then watches the Host's
+ *            per-process boot id and reloads this page when a new process
+ *            answers. A restart may kill the reply of the very request that
+ *            started it, so a failed POST alone is never reported as failure.
+ */
+
+    const React = require('react')
+    const h = React.createElement
+
+    const NS = 'restart-button'
+    const STATUS_URL = '/api/dsh-restart/status'
+    const RESTART_URL = '/api/dsh-restart/restart'
+    const STYLE_TAG = 'dsh-restart-button/styles.css'
+    const POLL_MS = 900
+    const TIMEOUT_MS = 120000
+    const CONFIRM_MS = 4000
+    const ARM_GUARD_MS = 400
+
+    // Metric-for-metric the same box as the sidebar's other footer rows (the
+    // theme toggle in dsh-plugin-suite): 32px row, 12px radius, 14/22 type,
+    // 9px inline padding, 6px icon gap, primary label colour. `flex: 1 1 100%`
+    // keeps the row whole when the footer wraps, so its ink starts on the same
+    // left inset as the rows above it instead of sharing a line with them.
+    const CSS = [
+      '.dsr-button{align-items:center;border:0;background:transparent;margin:0;cursor:pointer;display:inline-flex;',
+      'font:inherit;overflow:hidden;-webkit-app-region:no-drag}',
+      '.dsr-button[data-rail="true"]{width:36px;height:36px;padding:0;flex:none;justify-content:center;',
+      'border-radius:var(--dsw-radius-md,12px);color:var(--dsw-alias-label-primary)}',
+      '.dsr-button[data-rail="false"]{width:100%;flex:1 1 100%;height:32px;padding:0 9px;gap:6px;',
+      'justify-content:flex-start;border-radius:var(--dsw-radius-md,12px);',
+      'font-size:14px;line-height:22px;color:var(--dsw-alias-label-primary)}',
+      '@media (hover:hover){.dsr-button:hover{background-color:var(--dsw-alias-interactive-bg-hover)}}',
+      '.dsr-button:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid ',
+      'var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,var(--dsw-alias-label-primary)));outline-offset:-2px}',
+      '.dsr-button[data-phase="confirm"]{color:var(--dsw-alias-state-warn-primary);',
+      'background-color:var(--dsw-alias-interactive-bg-hover)}',
+      '.dsr-button[data-phase="error"]{color:var(--dsw-alias-state-error-primary)}',
+      '.dsr-button[data-phase="working"],.dsr-button[data-phase="waiting"]{cursor:progress}',
+      '.dsr-button[data-phase="working"] svg,.dsr-button[data-phase="waiting"] svg{animation:dsr-spin 1s linear infinite}',
+      '.dsr-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dsr-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}',
+      '@keyframes dsr-spin{to{transform:rotate(360deg)}}',
+      '@keyframes dsr-pulse{50%{opacity:.35}}',
+      '@media (prefers-reduced-motion:reduce){.dsr-button[data-phase="working"] svg,.dsr-button[data-phase="waiting"] svg{',
+      'animation:dsr-pulse 1.6s ease-in-out infinite}}',
+    ].join('')
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+    function RestartGlyph({ size }) {
+      return h('svg', {
+        width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+        stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round',
+        'aria-hidden': 'true', focusable: 'false',
+      },
+        h('path', { d: 'M20 12a8 8 0 1 1-8-8c2.2 0 4.3.9 5.9 2.5L20 8.9' }),
+        h('path', { d: 'M20 3.2v5.7h-5.7' }),
+      )
+    }
+
+    function createButton(ctx) {
+      const useT = () => {
+        // LocaleSnapshot is { active, locales, revision }; the active id changes
+        // on a language switch, which is what re-renders these labels.
+        const [locale, setLocale] = React.useState(() => ctx.locale.getLocale().active)
+        React.useEffect(() => ctx.locale.subscribe(() => setLocale(ctx.locale.getLocale().active)), [])
+        return [ctx.locale.bind(NS), locale]
+      }
+
+      return function RestartButton(props) {
+        const [t] = useT()
+        const wide = Boolean(props && props.wide)
+        const [phase, setPhase] = React.useState('idle')
+        const [notice, setNotice] = React.useState('')
+        const baseline = React.useRef(null)
+        const armedAt = React.useRef(0)
+        const confirmTimer = React.useRef(null)
+        const alive = React.useRef(true)
+
+        React.useEffect(() => () => {
+          alive.current = false
+          if (confirmTimer.current) clearTimeout(confirmTimer.current)
+        }, [])
+
+        React.useEffect(() => {
+          let cancelled = false
+          fetch(STATUS_URL, { cache: 'no-store' })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((status) => {
+              if (cancelled || !status || status.ok !== true) return
+              if (typeof status.bootId === 'string') baseline.current = status.bootId
+            })
+            .catch(() => { /* the page can open while the Host is still booting */ })
+          return () => { cancelled = true }
+        }, [])
+
+        const clearTimer = () => {
+          if (confirmTimer.current) {
+            clearTimeout(confirmTimer.current)
+            confirmTimer.current = null
+          }
+        }
+
+        const describeFailure = (payload, response) => {
+          const code = payload && typeof payload.error === 'string' ? payload.error : ''
+          if (code === 'already-restarting') return t('error.busy')
+          if (code === 'cross-origin' || code === 'json-only') return t('error.refused')
+          if (payload && typeof payload.message === 'string' && payload.message) {
+            return `${t('error.failed')} — ${payload.message}`
+          }
+          return `${t('error.failed')} — HTTP ${response.status}`
+        }
+
+        const waitForNewBoot = async () => {
+          const deadline = Date.now() + TIMEOUT_MS
+          while (alive.current && Date.now() < deadline) {
+            await sleep(POLL_MS)
+            if (!alive.current) return
+            try {
+              const response = await fetch(STATUS_URL, { cache: 'no-store' })
+              if (!response.ok) continue
+              const status = await response.json()
+              if (!status || status.ok !== true || typeof status.bootId !== 'string') continue
+              if (baseline.current === null) {
+                baseline.current = status.bootId
+                continue
+              }
+              if (status.bootId !== baseline.current) {
+                window.location.reload()
+                return
+              }
+            } catch {
+              // The container is down; keep waiting until it answers again.
+            }
+          }
+          throw new Error(t('error.timeout'))
+        }
+
+        const restart = async () => {
+          clearTimer()
+          setNotice('')
+          setPhase('working')
+          let payload = null
+          let failure = null
+          try {
+            const response = await fetch(RESTART_URL, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ confirm: true }),
+            })
+            payload = await response.json().catch(() => null)
+            const accepted = response.ok && payload && payload.ok === true
+            const alreadyRunning = response.status === 409 && payload && payload.error === 'already-restarting'
+            if (!accepted && !alreadyRunning) failure = describeFailure(payload, response)
+          } catch {
+            // A dropped connection is expected: the restart may have killed the
+            // Host before it finished the reply. The boot watch decides.
+          }
+          if (failure !== null) {
+            setPhase('error')
+            setNotice(failure)
+            return
+          }
+          if (payload && typeof payload.bootId === 'string' && baseline.current === null) {
+            baseline.current = payload.bootId
+          }
+          setPhase('waiting')
+          try {
+            await waitForNewBoot()
+          } catch (error) {
+            if (!alive.current) return
+            setPhase('error')
+            setNotice(error && error.message ? error.message : t('error.failed'))
+          }
+        }
+
+        const armOrRestart = () => {
+          if (phase === 'working' || phase === 'waiting') return
+          if (phase === 'confirm') {
+            // A double click must not discharge the confirmation by accident.
+            if (Date.now() - armedAt.current < ARM_GUARD_MS) return
+            void restart()
+            return
+          }
+          clearTimer()
+          setNotice('')
+          setPhase('confirm')
+          armedAt.current = Date.now()
+          confirmTimer.current = setTimeout(() => {
+            if (alive.current) setPhase('idle')
+          }, CONFIRM_MS)
+        }
+
+        const busy = phase === 'working' || phase === 'waiting'
+        const labelText = phase === 'confirm' ? t('action.confirm')
+          : phase === 'waiting' ? t('action.waiting')
+            : phase === 'error' ? t('action.error')
+              : t('action')
+        const hint = phase === 'waiting' ? t('hint.waiting')
+          : phase === 'working' ? t('hint.working')
+            : phase === 'error' ? (notice || t('error.failed'))
+              : phase === 'confirm' ? t('hint.confirm')
+                : t('hint.idle')
+
+        return h('button', {
+          type: 'button',
+          className: 'dsr-button',
+          'data-phase': phase,
+          'data-rail': wide ? 'false' : 'true',
+          'data-dsh-restart-button': 'true',
+          title: hint,
+          'aria-label': `${labelText} — ${hint}`,
+          'aria-busy': busy ? 'true' : 'false',
+          onClick: armOrRestart,
+        },
+          h(RestartGlyph, { size: 16 }),
+          wide ? h('span', { className: 'dsr-label' }, labelText) : null,
+          h('span', { className: 'dsr-sr', role: 'status', 'aria-live': 'polite' }, hint),
+        )
+      }
+    }
+
+    return {
+      inject: ['slots', 'locale'],
+      apply(ctx) {
+        ctx.effect(() => {
+          const existing = document.querySelector(`style[data-plugin-css="${STYLE_TAG}"]`)
+          if (existing) return () => existing.remove()
+          const style = document.createElement('style')
+          style.dataset.plugin = 'dsh-restart-button'
+          style.dataset.pluginCss = STYLE_TAG
+          style.textContent = CSS
+          document.head.appendChild(style)
+          return () => style.remove()
+        }, 'dsh-restart-button: styles')
+
+        ctx.effect(() => ctx.locale.register(NS, {
+          en: {
+            'action': 'Restart',
+            'action.confirm': 'Confirm restart',
+            'action.waiting': 'Restarting…',
+            'action.error': 'Restart failed',
+            'hint.idle': 'Restart the container this interface runs in',
+            'hint.confirm': 'Click again to restart now — every session in this container is interrupted',
+            'hint.working': 'Sending the restart request…',
+            'hint.waiting': 'Restarting… this page reloads by itself when the container is back',
+            'error.failed': 'Restart failed',
+            'error.busy': 'A restart is already running',
+            'error.refused': 'The request was refused',
+            'error.timeout': 'The container did not come back in time',
+          },
+          zh: {
+            'action': '重启',
+            'action.confirm': '确认重启',
+            'action.waiting': '正在重启…',
+            'action.error': '重启失败',
+            'hint.idle': '重启承载这个界面的容器',
+            'hint.confirm': '再点一次立即重启——容器里的所有会话都会中断',
+            'hint.working': '正在发送重启请求…',
+            'hint.waiting': '正在重启…容器回来后本页自动刷新',
+            'error.failed': '重启失败',
+            'error.busy': '已经有重启在进行中',
+            'error.refused': '请求被拒绝',
+            'error.timeout': '等待容器恢复超时',
+          },
+        }), 'dsh-restart-button: dictionaries')
+
+        const Button = createButton(ctx)
+        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+          name: 'sidebar.footer.action',
+          id: 'dsh-restart-button',
+          order: 30,
+        }, Button))
+      },
+    }
+    })(require)
+
     /** The switchable features, in settings-page order. */
     const FEATURES = [
       { id: "artifact-copy", plugin: artifactCopy },
@@ -1792,6 +2218,8 @@ function selectorFor(labels) {
       { id: "sidebar-pins", plugin: sidebarPins },
       { id: "rightbar-default-open", plugin: rightbarDefaultOpen },
       { id: "archive-filter-toggle", plugin: archiveFilterToggle },
+      { id: "approval-zh", plugin: approvalZh },
+      { id: "restart-button", plugin: restartButton },
     ]
 
     /** Dictionaries, flattened to the dotted keys `t()` looks up. */
@@ -1799,7 +2227,7 @@ function selectorFor(labels) {
       zh: {
             "settings.title": "小插件",
             "settings.nav": "小插件",
-            "settings.subtitle": "管理套件里的七个独立功能，开关即时生效。",
+            "settings.subtitle": "管理套件里的九个独立功能，开关即时生效。",
             "settings.enableAll": "全部开启",
             "settings.disableAll": "全部关闭",
             "settings.saved": "配置保存在",
@@ -1819,11 +2247,15 @@ function selectorFor(labels) {
             "settings.features.rightbar-default-open.title": "右侧栏默认展开",
             "settings.features.rightbar-default-open.description": "会话出现时自动展开右栏；窄于 768px 不展开，避免遮住对话。",
             "settings.features.archive-filter-toggle.title": "归档筛选一键切换",
-            "settings.features.archive-filter-toggle.description": "在侧栏「工作区」标题行的搜索图标左侧加一个按钮，一键在「隐藏已归档」和「仅显示已归档」之间切换；图标随状态变化，切换后弹一句提示。"},
+            "settings.features.archive-filter-toggle.description": "在侧栏「工作区」标题行的搜索图标左侧加一个按钮，一键在「隐藏已归档」和「仅显示已归档」之间切换；图标随状态变化，切换后弹一句提示。",
+            "settings.features.approval-zh.title": "审批界面中文",
+            "settings.features.approval-zh.description": "把审批卡标题显示成中文：DSH 自带的越权升级与 auto-review 措辞走离线词典，剩余英文经内置翻译服务处理，工具名、路径、JSON、命令与沙箱模式保留原文。跟随界面语言，翻译失败时显示原文，不影响审批决策。",
+            "settings.features.restart-button.title": "重启按钮",
+            "settings.features.restart-button.description": "侧栏底部一个重启按钮：点第一下待确认，点第二下结束 Host 进程，由容器重启策略把 DSH 拉回来，页面自动刷新。容器里所有会话都会中断。"},
       en: {
             "settings.title": "Plugin suite",
             "settings.nav": "Plugin suite",
-            "settings.subtitle": "Manage the seven independent features. Changes apply immediately.",
+            "settings.subtitle": "Manage the nine independent features. Changes apply immediately.",
             "settings.enableAll": "Enable all",
             "settings.disableAll": "Disable all",
             "settings.saved": "Configuration saved in",
@@ -1843,12 +2275,16 @@ function selectorFor(labels) {
             "settings.features.rightbar-default-open.title": "Right sidebar open by default",
             "settings.features.rightbar-default-open.description": "Expands the right column when a session appears; left alone under 768px so it never covers the conversation.",
             "settings.features.archive-filter-toggle.title": "One-click archive filter",
-            "settings.features.archive-filter-toggle.description": "Adds a button left of the search icon in the sidebar's Workspace header: one click flips between \"hide archived\" and \"archived only\". The glyph follows the state and a short notice confirms the switch."},
+            "settings.features.archive-filter-toggle.description": "Adds a button left of the search icon in the sidebar's Workspace header: one click flips between \"hide archived\" and \"archived only\". The glyph follows the state and a short notice confirms the switch.",
+            "settings.features.approval-zh.title": "Chinese approval cards",
+            "settings.features.approval-zh.description": "Shows the approval card headline in Chinese: DSH's own escalation and auto-review wording comes from an offline dictionary, leftover English prose goes through the built-in translator, and tool names, paths, JSON, commands and sandbox modes stay verbatim. Follows the UI language; a failed translation keeps the original text and never changes a decision.",
+            "settings.features.restart-button.title": "Restart button",
+            "settings.features.restart-button.description": "One control at the bottom of the sidebar: the first click arms it, the second ends the Host process and the container restart policy brings DSH back; the page reloads itself. Every session in this container is interrupted."},
     }
 
     /** localStorage mirror key; the Host document remains authoritative. */
     const MIRROR_KEY = 'dsh.plugin-suite.v1'
-    /** The seven switchable features, by id, in page order. */
+    /** The nine switchable features, by id, in page order. */
     const FEATURE_IDS = FEATURES.map(feature => feature.id)
     /** Settings page identity. */
     const SETTINGS_NS = 'plugin-suite'

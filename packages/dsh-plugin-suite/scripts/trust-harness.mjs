@@ -84,8 +84,8 @@ function loadSuite() {
     .replace(/^import .*$/gm, '')
     .replace(/^export function apply\(/m, 'function apply(')
   const module = { exports: {} }
-  new Function('module', 'exports', 'applyArtifactCopy', 'applyTurnCredits', `${body}
-module.exports = { apply }`)(module, module.exports, stubFeature, stubFeature)
+  new Function('module', 'exports', 'applyArtifactCopy', 'applyTurnCredits', 'applyApprovalZh', 'applyRestartButton', `${body}
+module.exports = { apply }`)(module, module.exports, stubFeature, stubFeature, stubFeature, stubFeature)
   return module.exports.apply
 }
 
@@ -186,7 +186,7 @@ loadSuite()(makeCtx({ withConnection: true }))
 await settle()
 // Both Host features mount from the same stub; take the artifact-copy route.
 const featurePaths = [...routes.keys()].filter(p => p !== statePath)
-check('two wrapped feature routes mounted', featurePaths.length, 2)
+check('four wrapped feature routes mounted', featurePaths.length, 4)
 for (const featurePath of featurePaths) {
   const admitted = await call(featurePath, '192.168.0.103:3080')
   const parsed = JSON.parse(admitted.body)

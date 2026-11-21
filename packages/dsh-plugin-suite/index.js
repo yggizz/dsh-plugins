@@ -31,6 +31,8 @@ import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 import { apply as applyArtifactCopy } from './features/host/artifact-copy.js'
 import { apply as applyTurnCredits } from './features/host/turn-credits.js'
+import { apply as applyApprovalZh } from './features/host/approval-zh.js'
+import { apply as applyRestartButton } from './features/host/restart-button.js'
 
 /* --------------------------------------------------------------- paths ---- */
 
@@ -56,6 +58,8 @@ const FEATURE_IDS = [
   'sidebar-pins',
   'rightbar-default-open',
   'archive-filter-toggle',
+  'approval-zh',
+  'restart-button',
 ]
 
 /** The switch document's shape version. */
@@ -68,6 +72,8 @@ const STATE_VERSION = 1
 const HOST_FEATURES = new Map([
   ['artifact-copy', applyArtifactCopy],
   ['turn-credits', applyTurnCredits],
+  ['approval-zh', applyApprovalZh],
+  ['restart-button', applyRestartButton],
 ])
 
 /* ----------------------------------------------------------------- http ---- */

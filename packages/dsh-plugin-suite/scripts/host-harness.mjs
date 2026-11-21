@@ -100,8 +100,8 @@ const body = source
   .replace(/^export function apply\(/m, 'function apply(')
 /* Every Host half the index imports is stubbed: this harness tests the suite's own
    route bookkeeping, not those feature bodies (their own harnesses cover them). */
-new Function('module', 'exports', 'applyArtifactCopy', 'applyTurnCredits', 'applyRestart', `${body}
-module.exports = { apply }`)(module, module.exports, stubFeature, stubFeature, stubFeature)
+new Function('module', 'exports', 'applyArtifactCopy', 'applyTurnCredits', 'applyApprovalZh', 'applyRestartButton', `${body}
+module.exports = { apply }`)(module, module.exports, stubFeature, stubFeature, stubFeature, stubFeature)
 
 /** A minimal Host feature: one route, registered the same way the real ones do. */
 function stubFeature(featureCtx) {
