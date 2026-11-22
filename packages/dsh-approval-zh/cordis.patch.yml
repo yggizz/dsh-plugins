@@ -1,6 +1,0 @@
-# One Host row serves the browser half: it owns the translation route the
-# approval card calls. The Client half takes over the approval composer and
-# passes the translated title into the shipped approval card.
-- insert:
-    - id: dsh-approval-zh
-      name: dsh-approval-zh

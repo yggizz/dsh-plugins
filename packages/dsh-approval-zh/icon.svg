@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Chinese approval card">
-  <rect x="4" y="4" width="56" height="56" rx="15" fill="#1f6f5c"/>
-  <path d="M14 20a5 5 0 0 1 5-5h26a5 5 0 0 1 5 5v16a5 5 0 0 1-5 5H29l-9 9v-9h-1a5 5 0 0 1-5-5z" fill="#f3fbf8"/>
-  <path d="M24 28.5l5 5 11-11" fill="none" stroke="#1f6f5c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="18" y="46" width="16" height="3.5" rx="1.75" fill="#8fd8c6"/>
-  <rect x="38" y="46" width="8" height="3.5" rx="1.75" fill="#8fd8c6"/>
-</svg>
