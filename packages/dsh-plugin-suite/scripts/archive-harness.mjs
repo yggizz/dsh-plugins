@@ -372,8 +372,8 @@ check('wrapper sits immediately before the search slot',
 check('button carries its own hook class', button?.attrs.class === 'psx-archive-btn')
 check('initial state is "hide"', button?.dataset.state === 'hide', button?.dataset.state)
 check('initial glyph is drawn', button?.attrs['data-has-svg'] === 'yes')
-check('the feature registered its own overlay slot',
-  liveCount('plugin-suite-archive-toast') === 1,
+check('the feature registers no overlay slot (silent toggle)',
+  liveCount('plugin-suite-archive-toast') === 0,
   liveIds.join(', '))
 
 button.click()
@@ -407,8 +407,8 @@ check('collapsed rail receives no button',
 const beforeSlots = live.slots
 await globalThis.window.__dshPluginSuite.set('archive-filter-toggle', false)
 await settle()
-check('switching the feature off removed its overlay registration',
-  liveCount('plugin-suite-archive-toast') === 0 && live.slots === beforeSlots - 1,
+check('switching the feature off removed no overlay registration',
+  liveCount('plugin-suite-archive-toast') === 0 && live.slots === beforeSlots,
   `${beforeSlots} -> ${live.slots}; ids=${liveIds.join(', ')}`)
 check('switching it off left no wrapper in the rail',
   rail.header.children.every(node => node.attrs.class !== 'psx-archive-slot'))
@@ -418,8 +418,8 @@ check('switching it off removed the diagnostic handle', globalThis.window.__dshA
 await globalThis.window.__dshPluginSuite.set('archive-filter-toggle', true)
 await settle()
 await settle()
-check('switching it back on registered its overlay again',
-  liveCount('plugin-suite-archive-toast') === 1,
+check('switching it back on still registers no overlay',
+  liveCount('plugin-suite-archive-toast') === 0,
   liveIds.join(', '))
 wide.header.remove()
 body.appendChild(wide.header)

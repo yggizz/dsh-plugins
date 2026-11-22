@@ -1398,6 +1398,10 @@ function selectorFor(labels) {
  * The rail (collapsed) sidebar renders no search input in the header, so the
  * wrapper is only inserted while the input exists — the collapsed 36px column
  * keeps its two icon controls untouched.
+ *
+ * Silent by design (owner's call): a toggle draws no screen notice at all. The
+ * state is visible in the glyph (struck-through box = hiding, ticked box =
+ * archived only) and in the button's tooltip; failures only reach the console.
  */
 
     const React = require('react')
@@ -1440,17 +1444,11 @@ function selectorFor(labels) {
         hide: '隐藏已归档',
         only: '仅显示已归档',
         hint: '切换归档筛选',
-        toastOnly: '已切到：仅显示已归档',
-        toastHide: '已切到：隐藏已归档',
-        failed: '没能切换归档筛选，菜单已打开，请手动选择',
       },
       en: {
         hide: 'Hide archived',
         only: 'Archived only',
         hint: 'Toggle the archived filter',
-        toastOnly: 'Showing archived only',
-        toastHide: 'Showing active only',
-        failed: 'Could not switch the archive filter; the menu is open — pick it yourself',
       },
     }
 
@@ -1476,10 +1474,6 @@ function selectorFor(labels) {
       '.psx-archive-btn[data-state="only"]{color:var(--dsw-alias-brand-primary,#3f6fd8);}',
       '.psx-archive-btn svg{width:16px;height:16px;display:block;}',
       '[data-sidebar-workspace-header]:has(input[type="text"][tabindex="0"]) .psx-archive-slot{display:none;}',
-      '.psx-archive-toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:2147483000;',
-      'padding:8px 14px;border-radius:10px;font-size:12px;line-height:18px;pointer-events:none;white-space:nowrap;',
-      'background:var(--dsw-alias-bg-overlay,rgba(32,32,32,.92));color:var(--dsw-alias-label-primary,#fff);',
-      'box-shadow:0 6px 24px rgba(0,0,0,.24);}',
     ].join('')
 
     /** Copy for one locale id; every non-Chinese language reads English. */
@@ -1559,43 +1553,6 @@ function selectorFor(labels) {
 
         /** This feature's DOM and timers, all released by one disposer. */
         const state = { slot: null, button: null, settle: 0, timers: new Set(), disposed: false }
-        /** The transient notice; the overlay host below renders it. */
-        const toast = { text: '', timer: 0, listeners: new Set() }
-
-        function notify() {
-          for (const listener of [...toast.listeners]) {
-            try { listener() } catch (_error) { /* one broken host must not stop the others */ }
-          }
-        }
-
-        function showToast(text) {
-          toast.text = text
-          notify()
-          if (toast.timer !== 0) window.clearTimeout(toast.timer)
-          toast.timer = window.setTimeout(() => {
-            toast.timer = 0
-            toast.text = ''
-            notify()
-          }, 2200)
-        }
-
-        function clearToast() {
-          if (toast.timer !== 0) window.clearTimeout(toast.timer)
-          toast.timer = 0
-          toast.text = ''
-        }
-
-        /** The frame-wide notice; it renders nothing until a toggle has something to say. */
-        function ToastHost() {
-          const [, bump] = React.useState(0)
-          React.useEffect(() => {
-            const listener = () => bump(value => value + 1)
-            toast.listeners.add(listener)
-            return () => { toast.listeners.delete(listener) }
-          }, [])
-          if (toast.text === '') return null
-          return h('div', { className: 'psx-archive-toast', role: 'status', 'aria-live': 'polite' }, toast.text)
-        }
 
         /** Repaint the button for the filter currently stored. */
         function refresh() {
@@ -1633,7 +1590,6 @@ function selectorFor(labels) {
           }
           const before = document.activeElement
           anchor.click()
-          const text = copy()
           /* The popover portals and mounts a frame or two later; poll briefly instead of guessing a delay. */
           let tries = 0
           const timer = window.setInterval(() => {
@@ -1650,11 +1606,8 @@ function selectorFor(labels) {
               window.setTimeout(() => {
                 refresh()
                 const now = readFilter()
-                if (now === undefined || now === target) {
-                  showToast(target === ONLY ? text.toastOnly : text.toastHide)
-                } else {
+                if (now !== undefined && now !== target) {
                   warn(`filter still ${now} after the menu click`)
-                  showToast(text.failed)
                 }
               }, 160)
               return
@@ -1663,7 +1616,6 @@ function selectorFor(labels) {
               window.clearInterval(timer)
               state.timers.delete(timer)
               warn('archive filter rows never appeared in the menu')
-              showToast(text.failed)
             }
           }, 30)
           state.timers.add(timer)
@@ -1757,8 +1709,6 @@ function selectorFor(labels) {
               window.clearTimeout(timer)
             }
             state.timers.clear()
-            clearToast()
-            toast.listeners.clear()
             if (state.button !== null) state.button.removeEventListener('click', onClick)
             /* Remove every wrapper this feature inserted, including one the shell
                detached while re-rendering: the mark is the only reliable handle. */
@@ -1769,10 +1719,6 @@ function selectorFor(labels) {
             delete window.__dshArchiveFilterToggle
           }
         }, 'archive-filter-toggle: header button')
-
-        ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-          name: 'shell.overlay', id: 'plugin-suite-archive-toast',
-        }, ToastHost))
 
         window.__dshArchiveFilterToggle = {
           current: readFilter,
