@@ -2543,14 +2543,22 @@ function selectorFor(labels) {
           }
         }, [open])
 
-        // Focus the field on open, and close when the pointer lands outside.
+        // Focus the field as soon as the panel exists: on the render that sets
+        // `open` the portal target is still null, so the field is not mounted
+        // yet — depending on `host` too is what turns "click, then click the
+        // input" into "click and type".
+        React.useEffect(() => {
+          if (!open || host === null) return undefined
+          const input = inputRef.current
+          if (input === null || typeof input.focus !== 'function') return undefined
+          input.focus()
+          if (typeof input.select === 'function') input.select()
+          return undefined
+        }, [open, host])
+
+        // Close when the pointer lands outside the panel or the button.
         React.useEffect(() => {
           if (!open) return undefined
-          const input = inputRef.current
-          if (input !== null && typeof input.focus === 'function') {
-            input.focus()
-            if (typeof input.select === 'function') input.select()
-          }
           const onDown = event => {
             const host = hostRef.current
             const button = buttonRef.current
