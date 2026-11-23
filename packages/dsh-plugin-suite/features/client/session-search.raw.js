@@ -2,7 +2,8 @@
  * Search inside the current Session — Client half.
  *
  * ONE seat: `conversation.session.header.utilities` — the right-aligned list of
- * Session utilities, where this button sits just left of the "…" menu. The
+ * Session utilities, where this button takes the leftmost cell of that row
+ * (order -100, before the shipped schedule control at -5). The
  * `conversation.session.header.corner` seat is NOT used on purpose: the shipped
  * right Sidebar's expand button owns that single slot, and registering there
  * replaced it (the toggle vanished from the header). The button toggles a small
@@ -514,7 +515,7 @@ window.__ModuleLoader__.load({
         ctx.slots.inject(SLOT, () => ctx.slots.register({
           name: SLOT,
           id: 'session-search',
-          order: 50,
+          order: -100,
         }, createSearch(t)))
       },
     }

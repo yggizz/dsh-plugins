@@ -2162,7 +2162,8 @@ function selectorFor(labels) {
  * Search inside the current Session — Client half.
  *
  * ONE seat: `conversation.session.header.utilities` — the right-aligned list of
- * Session utilities, where this button sits just left of the "…" menu. The
+ * Session utilities, where this button takes the leftmost cell of that row
+ * (order -100, before the shipped schedule control at -5). The
  * `conversation.session.header.corner` seat is NOT used on purpose: the shipped
  * right Sidebar's expand button owns that single slot, and registering there
  * replaced it (the toggle vanished from the header). The button toggles a small
@@ -2672,7 +2673,7 @@ function selectorFor(labels) {
         ctx.slots.inject(SLOT, () => ctx.slots.register({
           name: SLOT,
           id: 'session-search',
-          order: 50,
+          order: -100,
         }, createSearch(t)))
       },
     }
@@ -2723,7 +2724,7 @@ function selectorFor(labels) {
             "settings.features.restart-button.title": "重启按钮",
             "settings.features.restart-button.description": "侧栏底部一个重启按钮：点第一下待确认，点第二下结束 Host 进程，由容器重启策略把 DSH 拉回来，页面自动刷新。容器里所有会话都会中断。",
             "settings.features.session-search.title": "会话内搜索",
-            "settings.features.session-search.description": "在会话标题栏「⋯」菜单左边加一个搜索按钮（Ctrl/⌘+F 也能打开），输入关键字后高亮当前会话里所有匹配并逐个跳转，Enter 下一个、Shift+Enter 上一个。只搜索已经加载进页面的对话内容。"},
+            "settings.features.session-search.description": "在会话标题栏右侧那一排图标的最左边加一个搜索按钮（Ctrl/⌘+F 也能打开），输入关键字后高亮当前会话里所有匹配并逐个跳转，Enter 下一个、Shift+Enter 上一个。只搜索已经加载进页面的对话内容。"},
       en: {
             "settings.title": "Plugin suite",
             "settings.nav": "Plugin suite",
@@ -2753,7 +2754,7 @@ function selectorFor(labels) {
             "settings.features.restart-button.title": "Restart button",
             "settings.features.restart-button.description": "One control at the bottom of the sidebar: the first click arms it, the second ends the Host process and the container restart policy brings DSH back; the page reloads itself. Every session in this container is interrupted.",
             "settings.features.session-search.title": "In-session search",
-            "settings.features.session-search.description": "Adds a search button left of the header's \"…\" menu (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."},
+            "settings.features.session-search.description": "Adds a search button at the left end of the header's icon row (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."},
     }
 
     /** localStorage mirror key; the Host document remains authoritative. */
