@@ -60,6 +60,7 @@ const FEATURE_IDS = [
   'archive-filter-toggle',
   'approval-zh',
   'restart-button',
+  'session-search',
 ]
 
 /** The switch document's shape version. */

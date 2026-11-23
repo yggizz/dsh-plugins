@@ -1,4 +1,4 @@
-// Build `client.js` for dsh-plugin-suite from the nine raw client sources.
+// Build `client.js` for dsh-plugin-suite from the ten raw client sources.
 //
 // Each raw file is the original `window.__ModuleLoader__.load({ id, factory })`
 // wrapper. This script keeps the factory BODY verbatim (zero edits) and turns it
@@ -6,8 +6,9 @@
 // mount each feature as its own Cordis fiber and dispose it independently.
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+const here = path.dirname(fileURLToPath(import.meta.url))
 const dir = path.join(here, '..', 'features', 'client')
 const out = path.join(here, '..', 'client.js')
 const localeDir = path.join(here, '..', 'locale')
@@ -23,6 +24,7 @@ const FEATURES = [
   ['archive-filter-toggle'],
   ['approval-zh'],
   ['restart-button'],
+  ['session-search'],
 ]
 
 /**
@@ -94,7 +96,7 @@ ${preamble === '' ? '' : `${preamble}\n\n`}${body}
 const header = `/**
  * dsh-plugin-suite 鈥?Client half.
  *
- * Nine independent small features in ONE bundle, each mountable and removable at
+ * Ten independent small features in ONE bundle, each mountable and removable at
  * runtime, plus the Settings page that switches them.
  *
  * Every feature keeps its original factory body verbatim (see
@@ -132,7 +134,7 @@ ${FEATURES.map(([name]) => `      { id: ${JSON.stringify(name)}, plugin: ${ident
 
     /** localStorage mirror key; the Host document remains authoritative. */
     const MIRROR_KEY = 'dsh.plugin-suite.v1'
-    /** The nine switchable features, by id, in page order. */
+    /** The ten switchable features, by id, in page order. */
     const FEATURE_IDS = FEATURES.map(feature => feature.id)
     /** Settings page identity. */
     const SETTINGS_NS = 'plugin-suite'

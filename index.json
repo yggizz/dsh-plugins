@@ -5,8 +5,8 @@
     "zh": "yggizz DSH 插件"
   },
   "description": {
-    "en": "Small, dependency-free DeepSeek Harness plugins: a seven-feature suite with per-feature switches, a profile pack/restore panel, a sidebar restart control, and Chinese approval cards.",
-    "zh": "一组无依赖的小插件：一个带逐项开关的七合一插件套件、一个 profile 打包迁移面板、一个侧栏重启按钮，以及审批界面中文。"
+    "en": "Small, dependency-free DeepSeek Harness plugins: a ten-feature suite with per-feature switches and a profile pack/restore panel.",
+    "zh": "一组无依赖的小插件：一个带逐项开关的十合一插件套件，以及一个 profile 打包迁移面板。"
   },
   "metadata": {
     "categories": {
@@ -32,8 +32,8 @@
         "zh": "小插件套件"
       },
       "description": {
-        "en": "Nine small local features in one bundle: file right-click copy, light/dark toggle, per-turn spend, hidden branch button, remembered unpinned panels, right sidebar open by default, one-click archive filter, Chinese approval cards, and a sidebar restart button. Each has its own switch under Settings → Plugin suite, applied immediately. The configuration lives in ~/.dsh/plugin-suite.json.",
-        "zh": "把九个自研小功能装进一个插件包：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换、审批界面中文、侧栏重启按钮。设置 → 小插件 里可以逐个开关，改动即时生效。配置保存在 ~/.dsh/plugin-suite.json。"
+        "en": "Ten small local features in one bundle: file right-click copy, light/dark toggle, per-turn spend, hidden branch button, remembered unpinned panels, right sidebar open by default, one-click archive filter, Chinese approval cards, a sidebar restart button, and in-session keyword search. Each has its own switch under Settings → Plugin suite, applied immediately. The configuration lives in ~/.dsh/plugin-suite.json.",
+        "zh": "把十个自研小功能装进一个插件包：文件右键复制、深浅色切换、每轮花费、隐藏分支按钮、记住取消固定的面板、右侧栏默认展开、归档筛选一键切换、审批界面中文、侧栏重启按钮、会话内搜索。设置 → 小插件 里可以逐个开关，改动即时生效。配置保存在 ~/.dsh/plugin-suite.json。"
       },
       "icon": "https://raw.githubusercontent.com/yggizz/dsh-plugins/6c6c55e0b60bc787c6d76ae1d38c7061e0e22728/packages/dsh-plugin-suite/icon.svg",
       "author": "yggizz",

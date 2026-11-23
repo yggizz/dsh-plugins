@@ -1,8 +1,8 @@
 # 小插件套件（dsh-plugin-suite）
 
-把九个自研小功能装进一个插件包，并在「设置 → 小插件」里逐个开关。开关即时生效，不需要重启。
+把十个自研小功能装进一个插件包，并在「设置 → 小插件」里逐个开关。开关即时生效，不需要重启。
 
-## 九个功能
+## 十个功能
 
 | 功能 | 做什么 | 关掉之后 |
 |---|---|---|
@@ -15,6 +15,7 @@
 | 归档筛选一键切换 | 「工作区」标题行搜索图标左侧一个按钮，一键在「隐藏已归档」和「仅显示已归档」间切换 | 按钮消失，归档筛选回到内置菜单 |
 | 审批界面中文 | 审批卡标题显示中文：DSH 自带措辞离线词典翻译，剩余英文走内置翻译服务，工具名 / 路径 / JSON / 沙箱模式保留原文；跟随界面语言，翻译失败保留原文 | 卡片回到原样（官方英文/中文模板），翻译与状态路由同时卸载 |
 | 重启按钮 | 侧栏底部一个按钮，点两下结束 Host 进程、由容器重启策略拉回，页面自动刷新 | 按钮消失，两条路由同时卸载 |
+| 会话内搜索 | 会话标题栏最右侧一个搜索按钮（Ctrl/⌘+F 亦可）：高亮当前会话里所有匹配并逐个跳转，Enter 下一个、Shift+Enter 上一个 | 按钮消失，高亮与快捷键同时撤销 |
 
 ## 开关存在哪
 
@@ -32,7 +33,8 @@
     "rightbar-default-open": true,
     "archive-filter-toggle": true,
     "approval-zh": true,
-    "restart-button": true
+    "restart-button": true,
+    "session-search": true
   }
 }
 ```
@@ -80,7 +82,7 @@ dsh-plugin-suite/
 ├── index.js                 # Host 半边：开关文件 + /state 路由 + 四个 Host 功能
 ├── client.js                # 构建产物（勿手改）
 ├── features/
-│   ├── client/*.raw.js      # 九个原始 client 源文件，逐字节保留
+│   ├── client/*.raw.js      # 十个原始 client 源文件，逐字节保留
 │   └── host/*.js            # 四个 host 源文件（两个逐字节保留 + 两个套件内实现）
 ├── scripts/build.mjs        # 把 raw 拼成 client.js
 ├── scripts/harness.mjs      # 假 ctx 断言：挂载/卸载无泄漏
@@ -93,7 +95,7 @@ dsh-plugin-suite/
 
 `client.js` 由 `scripts/build.mjs` 生成：它剥掉每个 raw 文件的
 `window.__ModuleLoader__.load({ id, factory })` 外壳，把 **factory 主体逐字**放进一个
-`(function (require) { … })(require)` IIFE，因此九个功能的代码零改动。
+`(function (require) { … })(require)` IIFE，因此十个功能的代码零改动。
 
 重新构建：
 
@@ -111,10 +113,10 @@ $node = 'C:\Users\11919\.dsh\dsh-runtimes\dsh-next-primary-runtime\dependencies\
 ## 自测结果（假 ctx + 假 module loader + 假 req/res）
 
 ```
-after apply   effects=13 slots=7 styles=5 menus=1 fibers=9
-round 1/2/3   off: effects=12 slots=6   on: effects=13 slots=7     ← 三轮无漂移
+after apply   effects=16 slots=7 styles=6 menus=1 fibers=10
+round 1/2/3   off: effects=15 slots=6   on: effects=16 slots=7     ← 三轮无漂移
 all off       mounted=0 slots=1（只剩设置页本身）menus=0
-all on        mounted=9 slots=7 effects=13
+all on        mounted=10 slots=7 effects=16
 PASS: mount/unmount clean over 3 rounds, all-off leaves nothing, all-on restores
 
 host-harness: PASS 被 standalone 插件占住的路由在它关闭后被接管，无需重启

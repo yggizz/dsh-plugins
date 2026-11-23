@@ -14,8 +14,9 @@
 //   6. disposing the fiber removes the wrapper, the style tag and the overlay.
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+const here = path.dirname(fileURLToPath(import.meta.url))
 const source = fs.readFileSync(path.join(here, '..', 'client.js'), 'utf8')
 
 /* ------------------------------------------------------------- fake DOM ---- */
