@@ -1,10 +1,12 @@
 /**
  * Search inside the current Session — Client half.
  *
- * ONE seat: `conversation.session.header.corner`, the header's far-right
- * single-control corner (the one place the Conversation shell reserves for an
- * extra utility). The button toggles a small panel with an input, a match
- * counter, and previous/next.
+ * ONE seat: `conversation.session.header.utilities` — the right-aligned list of
+ * Session utilities, where this button sits just left of the "…" menu. The
+ * `conversation.session.header.corner` seat is NOT used on purpose: the shipped
+ * right Sidebar's expand button owns that single slot, and registering there
+ * replaced it (the toggle vanished from the header). The button toggles a small
+ * panel with an input, a match counter, and previous/next.
  *
  * WHAT IT SEARCHES
  * DSH renders the loaded part of a Session into the Chat flow, but exposes no
@@ -36,7 +38,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement
 
     const NS = 'sessionSearch'
-    const SLOT = 'conversation.session.header.corner'
+    const SLOT = 'conversation.session.header.utilities'
     const OPEN_EVENT = 'dsh-session-search:open'
     const ALL_HIGHLIGHT = 'dsh-session-search-all'
     const CURRENT_HIGHLIGHT = 'dsh-session-search-current'
@@ -289,6 +291,9 @@ window.__ModuleLoader__.load({
         const buttonRef = React.useRef(null)
         const inputRef = React.useRef(null)
         const hostRef = React.useRef(null)
+        // The portal target must live in state: a ref keeps the panel invisible
+        // because writing it inside an effect schedules no second render.
+        const [host, setHost] = React.useState(null)
         const rangesRef = React.useRef([])
         const timerRef = React.useRef(0)
         const aliveRef = React.useRef(true)
@@ -367,13 +372,15 @@ window.__ModuleLoader__.load({
         // panel would be cut off at the first 28px of its height.
         React.useEffect(() => {
           if (!open) return undefined
-          const host = document.createElement('div')
-          host.setAttribute(MARK_ATTR, '')
-          document.body.appendChild(host)
-          hostRef.current = host
+          const element = document.createElement('div')
+          element.setAttribute(MARK_ATTR, '')
+          document.body.appendChild(element)
+          hostRef.current = element
+          setHost(element)
           return () => {
-            if (host.parentNode !== null) host.parentNode.removeChild(host)
-            if (hostRef.current === host) hostRef.current = null
+            if (element.parentNode !== null) element.parentNode.removeChild(element)
+            if (hostRef.current === element) hostRef.current = null
+            if (aliveRef.current) setHost(current => (current === element ? null : current))
           }
         }, [open])
 
@@ -469,7 +476,6 @@ window.__ModuleLoader__.load({
               onClick: close,
             }, h(CrossGlyph, { size: 15 }))))
 
-        const host = hostRef.current
         return h(React.Fragment, null, button,
           host === null ? null : ReactDOM.createPortal(panel, host))
       }
@@ -508,6 +514,7 @@ window.__ModuleLoader__.load({
         ctx.slots.inject(SLOT, () => ctx.slots.register({
           name: SLOT,
           id: 'session-search',
+          order: 50,
         }, createSearch(t)))
       },
     }

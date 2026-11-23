@@ -2161,10 +2161,12 @@ function selectorFor(labels) {
 /**
  * Search inside the current Session — Client half.
  *
- * ONE seat: `conversation.session.header.corner`, the header's far-right
- * single-control corner (the one place the Conversation shell reserves for an
- * extra utility). The button toggles a small panel with an input, a match
- * counter, and previous/next.
+ * ONE seat: `conversation.session.header.utilities` — the right-aligned list of
+ * Session utilities, where this button sits just left of the "…" menu. The
+ * `conversation.session.header.corner` seat is NOT used on purpose: the shipped
+ * right Sidebar's expand button owns that single slot, and registering there
+ * replaced it (the toggle vanished from the header). The button toggles a small
+ * panel with an input, a match counter, and previous/next.
  *
  * WHAT IT SEARCHES
  * DSH renders the loaded part of a Session into the Chat flow, but exposes no
@@ -2194,7 +2196,7 @@ function selectorFor(labels) {
     const h = React.createElement
 
     const NS = 'sessionSearch'
-    const SLOT = 'conversation.session.header.corner'
+    const SLOT = 'conversation.session.header.utilities'
     const OPEN_EVENT = 'dsh-session-search:open'
     const ALL_HIGHLIGHT = 'dsh-session-search-all'
     const CURRENT_HIGHLIGHT = 'dsh-session-search-current'
@@ -2447,6 +2449,9 @@ function selectorFor(labels) {
         const buttonRef = React.useRef(null)
         const inputRef = React.useRef(null)
         const hostRef = React.useRef(null)
+        // The portal target must live in state: a ref keeps the panel invisible
+        // because writing it inside an effect schedules no second render.
+        const [host, setHost] = React.useState(null)
         const rangesRef = React.useRef([])
         const timerRef = React.useRef(0)
         const aliveRef = React.useRef(true)
@@ -2525,13 +2530,15 @@ function selectorFor(labels) {
         // panel would be cut off at the first 28px of its height.
         React.useEffect(() => {
           if (!open) return undefined
-          const host = document.createElement('div')
-          host.setAttribute(MARK_ATTR, '')
-          document.body.appendChild(host)
-          hostRef.current = host
+          const element = document.createElement('div')
+          element.setAttribute(MARK_ATTR, '')
+          document.body.appendChild(element)
+          hostRef.current = element
+          setHost(element)
           return () => {
-            if (host.parentNode !== null) host.parentNode.removeChild(host)
-            if (hostRef.current === host) hostRef.current = null
+            if (element.parentNode !== null) element.parentNode.removeChild(element)
+            if (hostRef.current === element) hostRef.current = null
+            if (aliveRef.current) setHost(current => (current === element ? null : current))
           }
         }, [open])
 
@@ -2627,7 +2634,6 @@ function selectorFor(labels) {
               onClick: close,
             }, h(CrossGlyph, { size: 15 }))))
 
-        const host = hostRef.current
         return h(React.Fragment, null, button,
           host === null ? null : ReactDOM.createPortal(panel, host))
       }
@@ -2666,6 +2672,7 @@ function selectorFor(labels) {
         ctx.slots.inject(SLOT, () => ctx.slots.register({
           name: SLOT,
           id: 'session-search',
+          order: 50,
         }, createSearch(t)))
       },
     }
@@ -2716,7 +2723,7 @@ function selectorFor(labels) {
             "settings.features.restart-button.title": "重启按钮",
             "settings.features.restart-button.description": "侧栏底部一个重启按钮：点第一下待确认，点第二下结束 Host 进程，由容器重启策略把 DSH 拉回来，页面自动刷新。容器里所有会话都会中断。",
             "settings.features.session-search.title": "会话内搜索",
-            "settings.features.session-search.description": "在会话标题栏最右侧加一个搜索按钮（Ctrl/⌘+F 也能打开），输入关键字后高亮当前会话里所有匹配并逐个跳转，Enter 下一个、Shift+Enter 上一个。只搜索已经加载进页面的对话内容。"},
+            "settings.features.session-search.description": "在会话标题栏「⋯」菜单左边加一个搜索按钮（Ctrl/⌘+F 也能打开），输入关键字后高亮当前会话里所有匹配并逐个跳转，Enter 下一个、Shift+Enter 上一个。只搜索已经加载进页面的对话内容。"},
       en: {
             "settings.title": "Plugin suite",
             "settings.nav": "Plugin suite",
@@ -2746,7 +2753,7 @@ function selectorFor(labels) {
             "settings.features.restart-button.title": "Restart button",
             "settings.features.restart-button.description": "One control at the bottom of the sidebar: the first click arms it, the second ends the Host process and the container restart policy brings DSH back; the page reloads itself. Every session in this container is interrupted.",
             "settings.features.session-search.title": "In-session search",
-            "settings.features.session-search.description": "Adds a search button at the far right of the session header (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."},
+            "settings.features.session-search.description": "Adds a search button left of the header's \"…\" menu (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."},
     }
 
     /** localStorage mirror key; the Host document remains authoritative. */

@@ -52,7 +52,7 @@
       },
       "session-search": {
         "title": "In-session search",
-        "description": "Adds a search button at the far right of the session header (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."
+        "description": "Adds a search button left of the header's \"…\" menu (Ctrl/⌘+F also opens it): it highlights every match in the current session and steps through them, Enter for next and Shift+Enter for previous. Only the conversation already loaded in the page is searched."
       }
     }
   }
