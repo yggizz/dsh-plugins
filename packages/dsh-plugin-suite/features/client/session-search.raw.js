@@ -173,7 +173,11 @@ window.__ModuleLoader__.load({
       while (node !== null) {
         const parent = node.parentElement
         const text = node.nodeValue === null ? '' : node.nodeValue
-        if (parent !== null && text.length > 0 && parent.closest('[aria-hidden="true"],[hidden]') === null) {
+        // The composer lives inside the Chat region (`data-composer-seat` is marked
+        // `data-conversation-region="composer"`), so it must be excluded here or
+        // the placeholder, the draft text and control labels would all match.
+        if (parent !== null && text.length > 0
+          && parent.closest('[aria-hidden="true"],[hidden],[data-conversation-region="composer"]') === null) {
           const hay = text.toLocaleLowerCase()
           let from = 0
           for (;;) {
