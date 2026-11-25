@@ -306,7 +306,7 @@ window.__ModuleLoader__.load({
     }
 
     /** Host faces captured in apply(); components read them at render time. */
-    const services = { theme: undefined, locale: undefined, ctx: undefined };
+    const services = { theme: undefined, locale: undefined, ctx: undefined, forms: undefined };
 
     /**
      * Shared theme + locale state for every placement, so both buttons show the
@@ -344,9 +344,102 @@ window.__ModuleLoader__.load({
       return { scheme, nextId, label: nextId === 'dark' ? text.toDark : text.toLight };
     }
 
+    /* ---------------------------------------------------------- write guard *
+     * The preference lives in the profile patch, and that one file is rewritten
+     * wholesale by a crowd of other plugins (fast-mode rewrites its whole
+     * session map on every new conversation; the market writes the file with a
+     * plain `writeFileSync`). A click can therefore land on a refused write
+     * (`settings-conflict`, because `ui-theme` writes carry an
+     * `expectedRevision`), and `ThemeRuntime.write()` only uses `.finally()` —
+     * it never inspects the result — so `adopt()` immediately re-applies the
+     * durable value and the UI flips back a few seconds later with no error
+     * anywhere.
+     *
+     * The guard re-issues the click while its window is open, but only for a
+     * flip back to the exact value that click replaced: a deliberate change to
+     * any other value (the Settings page, another plugin) is left alone, and a
+     * persistent refusal stops after GUARD_RETRIES instead of looping.
+     */
+    /** How long after a click a flip-back still counts as a lost write. */
+    const GUARD_WINDOW_MS = 8000;
+    /** Re-issues allowed inside one window. */
+    const GUARD_RETRIES = 3;
+    /** Spacing between re-issues, multiplied by the attempt number. */
+    const GUARD_STEP_MS = 400;
+
+    /** The click being protected: what it asked for, what it replaced, when it expires. */
+    const guard = { desired: null, previous: null, until: 0, attempts: 0, timer: null };
+
+    /** Drop the guard and any pending re-issue. */
+    function guardReset() {
+      guard.desired = null;
+      guard.previous = null;
+      guard.until = 0;
+      guard.attempts = 0;
+      if (guard.timer !== null) {
+        clearTimeout(guard.timer);
+        guard.timer = null;
+      }
+    }
+
+    /**
+     * Write one preference and arm the guard for the next few seconds.
+     * @param nextId - the theme id the click asked for.
+     */
     function toggleTheme(nextId) {
       const theme = services.theme;
-      if (theme && typeof theme.setTheme === 'function') theme.setTheme(nextId);
+      if (!theme || typeof theme.setTheme !== 'function') return;
+      const current = typeof theme.getTheme === 'function' ? theme.getTheme() : null;
+      guard.previous = current && current.preference ? current.preference : null;
+      guard.desired = nextId;
+      guard.until = Date.now() + GUARD_WINDOW_MS;
+      guard.attempts = 0;
+      theme.setTheme(nextId);
+    }
+
+    /**
+     * The preference the profile currently persists, when it is readable.
+     * A bounce to the old value with this already holding the new one is
+     * somebody else's deliberate choice (the Settings page, another plugin),
+     * not a lost write — so the guard stays out of it.
+     * @returns the durable preference, or undefined when the form is absent.
+     */
+    function durablePreference() {
+      const forms = services.forms;
+      if (!forms || typeof forms.get !== 'function') return undefined;
+      try {
+        const form = forms.get('ui-theme');
+        const snapshot = form && typeof form.getSnapshot === 'function' ? form.getSnapshot() : undefined;
+        // `value` is the resolved section — the same layer `adopt()` re-applies.
+        const section = snapshot && snapshot.value;
+        return section && typeof section.preference === 'string' ? section.preference : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+
+    /**
+     * Re-issue a click whose write was lost.
+     * @param snapshot - the snapshot published by `theme/change`.
+     */
+    function guardTheme(snapshot) {
+      const preference = snapshot && snapshot.preference;
+      if (guard.desired === null || preference === guard.desired) return;
+      // Anything other than a bounce back to the replaced value is the user's
+      // own new choice, not a lost write.
+      if (preference !== guard.previous) return guardReset();
+      // The durable layer already holds what the click asked for: the write
+      // landed and this bounce is a deliberate later choice.
+      if (durablePreference() === guard.desired) return guardReset();
+      if (Date.now() > guard.until || guard.attempts >= GUARD_RETRIES) return guardReset();
+      guard.attempts += 1;
+      if (guard.timer !== null) clearTimeout(guard.timer);
+      guard.timer = setTimeout(() => {
+        guard.timer = null;
+        if (guard.desired === null) return;
+        const theme = services.theme;
+        if (theme && typeof theme.setTheme === 'function') theme.setTheme(guard.desired);
+      }, GUARD_STEP_MS * guard.attempts);
     }
 
     /* ---------------------------------------------------------------- *
@@ -600,7 +693,18 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         services.theme = ctx.theme;
         services.locale = typeof ctx.get === 'function' ? ctx.get('locale') : undefined;
+        services.forms = typeof ctx.get === 'function' ? ctx.get('configForms') : undefined;
         services.ctx = ctx;
+        // Feature-level, not hook-level: the guard has to watch the flip-back
+        // that happens seconds after a click, whether or not a button is
+        // currently mounted in a seat the column happens to render.
+        ctx.effect(() => {
+          const off = ctx.on('theme/change', (snapshot) => guardTheme(snapshot));
+          return () => {
+            off();
+            guardReset();
+          };
+        }, 'theme-toggle: write guard');
         ctx.effect(() => {
           const style = document.createElement('style');
           style.setAttribute('data-dsh-theme-toggle', '');
@@ -2720,7 +2824,7 @@ function selectorFor(labels) {
             "settings.features.artifact-copy.title": "文件右键复制",
             "settings.features.artifact-copy.description": "在对话里的文件上右键，复制路径、相对路径、文件内容或文件本体。",
             "settings.features.theme-toggle.title": "深浅色切换",
-            "settings.features.theme-toggle.description": "侧栏底部一个按钮切换明暗主题，浏览器与桌面客户端一致。",
+            "settings.features.theme-toggle.description": "侧栏底部一个按钮切换明暗主题，浏览器与桌面客户端一致。主题偏好写在共享的 profile 补丁里，偶尔会被别的插件覆盖回去；按钮会在点击后的几秒内自动重试，把你要的那一档再写回去。",
             "settings.features.turn-credits.title": "每轮花费",
             "settings.features.turn-credits.description": "在每条回复的操作行显示这一轮实际花掉的积分或人民币。",
             "settings.features.hide-branch.title": "隐藏「分支到新会话」",
@@ -2750,7 +2854,7 @@ function selectorFor(labels) {
             "settings.features.artifact-copy.title": "File right-click copy",
             "settings.features.artifact-copy.description": "Right-click a file in the conversation to copy its path, relative path, contents, or the file itself.",
             "settings.features.theme-toggle.title": "Theme toggle",
-            "settings.features.theme-toggle.description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client.",
+            "settings.features.theme-toggle.description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client. The preference lives in the shared profile patch, which other plugins occasionally overwrite; the button retries for a few seconds after a click to put your choice back.",
             "settings.features.turn-credits.title": "Per-turn spend",
             "settings.features.turn-credits.description": "Shows what each completed turn cost, in credits or CNY, on that reply's action row.",
             "settings.features.hide-branch.title": "Hide \"branch into a new conversation\"",

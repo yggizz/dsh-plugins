@@ -20,7 +20,7 @@
       },
       "theme-toggle": {
         "title": "Theme toggle",
-        "description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client."
+        "description": "One button at the bottom of the sidebar switches light and dark, on both the browser and the desktop client. The preference lives in the shared profile patch, which other plugins occasionally overwrite; the button retries for a few seconds after a click to put your choice back."
       },
       "turn-credits": {
         "title": "Per-turn spend",

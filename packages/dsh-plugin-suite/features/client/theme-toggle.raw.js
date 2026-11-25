@@ -61,7 +61,7 @@ window.__ModuleLoader__.load({
     }
 
     /** Host faces captured in apply(); components read them at render time. */
-    const services = { theme: undefined, locale: undefined, ctx: undefined };
+    const services = { theme: undefined, locale: undefined, ctx: undefined, forms: undefined };
 
     /**
      * Shared theme + locale state for every placement, so both buttons show the
@@ -99,9 +99,102 @@ window.__ModuleLoader__.load({
       return { scheme, nextId, label: nextId === 'dark' ? text.toDark : text.toLight };
     }
 
+    /* ---------------------------------------------------------- write guard *
+     * The preference lives in the profile patch, and that one file is rewritten
+     * wholesale by a crowd of other plugins (fast-mode rewrites its whole
+     * session map on every new conversation; the market writes the file with a
+     * plain `writeFileSync`). A click can therefore land on a refused write
+     * (`settings-conflict`, because `ui-theme` writes carry an
+     * `expectedRevision`), and `ThemeRuntime.write()` only uses `.finally()` —
+     * it never inspects the result — so `adopt()` immediately re-applies the
+     * durable value and the UI flips back a few seconds later with no error
+     * anywhere.
+     *
+     * The guard re-issues the click while its window is open, but only for a
+     * flip back to the exact value that click replaced: a deliberate change to
+     * any other value (the Settings page, another plugin) is left alone, and a
+     * persistent refusal stops after GUARD_RETRIES instead of looping.
+     */
+    /** How long after a click a flip-back still counts as a lost write. */
+    const GUARD_WINDOW_MS = 8000;
+    /** Re-issues allowed inside one window. */
+    const GUARD_RETRIES = 3;
+    /** Spacing between re-issues, multiplied by the attempt number. */
+    const GUARD_STEP_MS = 400;
+
+    /** The click being protected: what it asked for, what it replaced, when it expires. */
+    const guard = { desired: null, previous: null, until: 0, attempts: 0, timer: null };
+
+    /** Drop the guard and any pending re-issue. */
+    function guardReset() {
+      guard.desired = null;
+      guard.previous = null;
+      guard.until = 0;
+      guard.attempts = 0;
+      if (guard.timer !== null) {
+        clearTimeout(guard.timer);
+        guard.timer = null;
+      }
+    }
+
+    /**
+     * Write one preference and arm the guard for the next few seconds.
+     * @param nextId - the theme id the click asked for.
+     */
     function toggleTheme(nextId) {
       const theme = services.theme;
-      if (theme && typeof theme.setTheme === 'function') theme.setTheme(nextId);
+      if (!theme || typeof theme.setTheme !== 'function') return;
+      const current = typeof theme.getTheme === 'function' ? theme.getTheme() : null;
+      guard.previous = current && current.preference ? current.preference : null;
+      guard.desired = nextId;
+      guard.until = Date.now() + GUARD_WINDOW_MS;
+      guard.attempts = 0;
+      theme.setTheme(nextId);
+    }
+
+    /**
+     * The preference the profile currently persists, when it is readable.
+     * A bounce to the old value with this already holding the new one is
+     * somebody else's deliberate choice (the Settings page, another plugin),
+     * not a lost write — so the guard stays out of it.
+     * @returns the durable preference, or undefined when the form is absent.
+     */
+    function durablePreference() {
+      const forms = services.forms;
+      if (!forms || typeof forms.get !== 'function') return undefined;
+      try {
+        const form = forms.get('ui-theme');
+        const snapshot = form && typeof form.getSnapshot === 'function' ? form.getSnapshot() : undefined;
+        // `value` is the resolved section — the same layer `adopt()` re-applies.
+        const section = snapshot && snapshot.value;
+        return section && typeof section.preference === 'string' ? section.preference : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+
+    /**
+     * Re-issue a click whose write was lost.
+     * @param snapshot - the snapshot published by `theme/change`.
+     */
+    function guardTheme(snapshot) {
+      const preference = snapshot && snapshot.preference;
+      if (guard.desired === null || preference === guard.desired) return;
+      // Anything other than a bounce back to the replaced value is the user's
+      // own new choice, not a lost write.
+      if (preference !== guard.previous) return guardReset();
+      // The durable layer already holds what the click asked for: the write
+      // landed and this bounce is a deliberate later choice.
+      if (durablePreference() === guard.desired) return guardReset();
+      if (Date.now() > guard.until || guard.attempts >= GUARD_RETRIES) return guardReset();
+      guard.attempts += 1;
+      if (guard.timer !== null) clearTimeout(guard.timer);
+      guard.timer = setTimeout(() => {
+        guard.timer = null;
+        if (guard.desired === null) return;
+        const theme = services.theme;
+        if (theme && typeof theme.setTheme === 'function') theme.setTheme(guard.desired);
+      }, GUARD_STEP_MS * guard.attempts);
     }
 
     /* ---------------------------------------------------------------- *
@@ -355,7 +448,18 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         services.theme = ctx.theme;
         services.locale = typeof ctx.get === 'function' ? ctx.get('locale') : undefined;
+        services.forms = typeof ctx.get === 'function' ? ctx.get('configForms') : undefined;
         services.ctx = ctx;
+        // Feature-level, not hook-level: the guard has to watch the flip-back
+        // that happens seconds after a click, whether or not a button is
+        // currently mounted in a seat the column happens to render.
+        ctx.effect(() => {
+          const off = ctx.on('theme/change', (snapshot) => guardTheme(snapshot));
+          return () => {
+            off();
+            guardReset();
+          };
+        }, 'theme-toggle: write guard');
         ctx.effect(() => {
           const style = document.createElement('style');
           style.setAttribute('data-dsh-theme-toggle', '');
