@@ -441,6 +441,14 @@ window.__ModuleLoader__.load({
       // without a caption band.
       'html:not([data-windows-titlebar]) .dsh-theme-toggle-anchor{display:none;}',
       'html[data-dsh-theme-foot] .dsh-theme-toggle-anchor{display:none;}',
+      // Hide the WeChat remote launcher in the sidebar foot. That plugin always
+      // registers into `sidebar.footer.action` with no config switch of its own,
+      // and its Settings entry stays reachable from the Settings panel, so the
+      // foot copy is redundant. Targeted by the shell's own `data-slot` marker
+      // plus the plugin's literal aria-label, not by its hashed class name, so a
+      // restyle of that plugin does not silently bring the row back. Removing
+      // this rule restores the button.
+      '[data-slot="sidebar.footer.action"] button[aria-label="\u5fae\u4fe1\u8fde\u63a5"]{display:none;}',
     ].join('');
 
     return {
